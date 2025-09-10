@@ -129,7 +129,7 @@ export default function App() {
     "Thầy Cường",
     "Thầy Bình",
     "Thầy Tâm",
-    "Giáo Viên Nước Ngoài"
+    "GVNN"
   ];
 
   // 12 màu thẻ riêng cho giáo viên
