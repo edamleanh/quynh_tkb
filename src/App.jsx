@@ -187,7 +187,8 @@ export default function App() {
     // color sẽ tự động theo giáo viên
   })
 
-
+  // Thêm state kiểm soát chế độ chỉnh sửa
+  const [editMode, setEditMode] = React.useState(false);
 
   // Hàm lưu dữ liệu Firestore (dùng trong handleSave, handleDelete)
   const saveItemsToFirestore = async (newItems) => {
@@ -338,6 +339,12 @@ export default function App() {
         <div className="container flex items-center justify-between py-4">
           <h1 className="text-xl font-semibold">Quản lý thời khóa biểu</h1>
           <div className="flex items-center gap-2">
+            <Button
+              variant={editMode ? "default" : "outline"}
+              onClick={() => setEditMode(e => !e)}
+            >
+              {editMode ? "Đang chỉnh sửa" : "Chỉnh sửa"}
+            </Button>
             {!isTeacherUrl && (
               <Button
                 variant="outline"
@@ -345,7 +352,6 @@ export default function App() {
                   if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
                     localStorage.removeItem("ttb-items-v2");
                     setItems({});
-                    // Xóa luôn trên Firestore
                     await setDoc(doc(db, "timetables", "main"), { items: {} });
                     toast({ title: "Đã làm trống thời khóa biểu" });
                   }
@@ -422,7 +428,7 @@ export default function App() {
                             <td key={d.id} className="border border-neutral-200 p-2">
                               <div className={`rounded-lg p-1 text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 28, padding: '4px 6px' }}>
                                 <div className="font-semibold leading-tight text-xs">{found.teacher}</div>
-                                <div className="text-xs">{found.subject}</div>
+                                <div className="text-xs">Lớp {found.subject}</div>
                                 <div className="text-xs italic">Phòng: {found.room.toUpperCase()}</div>
                               </div>
                             </td>
@@ -476,20 +482,22 @@ export default function App() {
                               return (
                                 <td key={key} className="border border-neutral-200 p-2">
                                   {!item ? (
-                                    <Button size="sm" variant="ghost" onClick={() => openCreate(d.id, slot, room)}>
-                                      + Thêm lớp
-                                    </Button>
+                                    editMode && (
+                                      <Button size="sm" variant="ghost" onClick={() => openCreate(d.id, slot, room)}>
+                                        + Thêm lớp
+                                      </Button>
+                                    )
                                   ) : (
                                     <div
                                       className={`rounded-lg p-1 cursor-pointer text-xs ${getTeacherColor(item.teacher)}`}
                                       style={{ minHeight: 28, padding: '4px 6px' }}
-                                      onClick={() => openEdit(d.id, slot, room)}
+                                      onClick={() => editMode && openEdit(d.id, slot, room)}
                                     >
                                       <div className="flex items-center gap-1">
-                                        <span className="font-semibold leading-tight text-xs">{item.subject}</span>
                                         {!!item.teacher && (
-                                          <span className="text-[10px] opacity-80 font-bold">- {item.teacher}</span>
+                                          <span className="text-[10px] opacity-80 font-bold">{item.teacher}</span>
                                         )}
+                                        <span className="font-semibold leading-tight text-xs">- Lớp {item.subject}</span>
                                       </div>
                                     </div>
                                   )}
