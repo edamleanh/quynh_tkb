@@ -217,7 +217,7 @@ export default function App() {
         margin: 0.2,
         filename,
         html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
       })
       .from(tableRef.current)
       .save();
@@ -250,11 +250,13 @@ export default function App() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => {
+              onClick={async () => {
                 if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
-                  localStorage.removeItem("ttb-items-v2")
-                  setItems({})
-                  toast({ title: "Đã làm trống thời khóa biểu" })
+                  localStorage.removeItem("ttb-items-v2");
+                  setItems({});
+                  // Xóa luôn trên Firestore
+                  await setDoc(doc(db, "timetables", "main"), { items: {} });
+                  toast({ title: "Đã làm trống thời khóa biểu" });
                 }
               }}
             >
@@ -291,10 +293,10 @@ export default function App() {
               <table className="w-full border border-neutral-200">
                 <thead className="bg-neutral-100 text-sm">
                   <tr>
-                    <th className="border border-neutral-200 px-3 py-2 text-left sticky left-0 z-20 bg-neutral-100 w-40">
+                    <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 70, minWidth: 60}}>
                       Ngày
                     </th>
-                    <th className="border border-neutral-200 px-3 py-2 text-left sticky left-0 z-20 bg-neutral-100 w-40">
+                    <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
                       Giờ
                     </th>
                     {ROOMS.map(r => (
@@ -312,9 +314,9 @@ export default function App() {
                           {/* Ô "Ngày" gộp 6 hàng */}
                           {slotIdx === 0 && (
                             <td
-                              className="border border-neutral-200 px-3 py-2 font-medium bg-white"
+                              className="border border-neutral-200 px-1 py-2 font-medium bg-white"
                               rowSpan={SLOTS.length}
-                              width={160}
+                              style={{width: 70, minWidth: 60}}
                             >
                               {d.label}
                             </td>
@@ -323,7 +325,7 @@ export default function App() {
                           {/* Cột "Giờ" hiển thị ở hàng con đầu tiên? → Yêu cầu là mỗi Thứ chia 6 hàng theo giờ,
                               nên ta hiển thị giờ ở cột đầu tiên của mỗi hàng con, sau ô "Ngày".
                               Để giữ đúng số cột, ta render giờ như một cell riêng trước các phòng. */}
-                          <td className="border border-neutral-200 px-3 py-2 w-28 bg-white/80 sticky left-0 z-20 bg-neutral-100 w-40">
+                          <td className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
                             <span className="text-sm text-neutral-700">{slot}</span>
                           </td>
 
@@ -343,21 +345,16 @@ export default function App() {
                                   </Button>
                                 ) : (
                                   <div
-                                    className={`rounded-lg p-3 cursor-pointer ${getTeacherColor(item.teacher)}`}
+                                    className={`rounded-lg p-1 cursor-pointer text-xs ${getTeacherColor(item.teacher)}`}
+                                    style={{ minHeight: 28, padding: '4px 6px' }}
                                     onClick={() => openEdit(d.id, slot, room)}
                                   >
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="font-semibold leading-tight">{item.subject}</div>
-                                      <Badge variant="secondary" className="shrink-0">
-                                        {room.toUpperCase()}
-                                      </Badge>
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-semibold leading-tight text-xs">{item.subject}</span>
+                                      {!!item.teacher && (
+                                        <span className="text-[10px] opacity-80 font-bold">- {item.teacher}</span>
+                                      )}
                                     </div>
-                                    {!!item.teacher && (
-                                      <div className="text-xs opacity-80 mt-1">GV: {item.teacher}</div>
-                                    )}
-                                    {!!item.note && (
-                                      <div className="text-xs opacity-80 mt-1 line-clamp-2">Ghi chú: {item.note}</div>
-                                    )}
                                   </div>
                                 )}
                               </td>
