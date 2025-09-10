@@ -147,12 +147,17 @@ export default function App() {
       toast({ title: "Trùng giáo viên", description: "Giáo viên này đã có lớp ở khung giờ này!" });
       return;
     }
-    setItems(prev => ({
-      ...prev,
-      [key]: { subject: form.subject, teacher: form.teacher, note: form.note },
-    }))
-    toast({ title: editingKey ? "Đã cập nhật" : "Đã thêm lớp" })
-    setOpen(false)
+    setItems(prev => {
+      let newItems = { ...prev };
+      // Nếu đang sửa và key mới khác key cũ thì xóa key cũ
+      if (editingKey && editingKey !== key) {
+        delete newItems[editingKey];
+      }
+      newItems[key] = { subject: form.subject, teacher: form.teacher, note: form.note };
+      return newItems;
+    });
+    toast({ title: editingKey ? "Đã cập nhật" : "Đã thêm lớp" });
+    setOpen(false);
   }
 
   const handleDelete = () => {
