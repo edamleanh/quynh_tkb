@@ -1,8 +1,12 @@
 import React from "react"
 // Thêm import useRef
 import html2pdf from "html2pdf.js"
-import * as XLSX from "xlsx";
 import { ROOMS, SLOTS, DAYS } from "@/lib/timeTableData"
+const handleExportExcel = async () => {
+  const XLSX = await import("xlsx");
+  // ...phần còn lại giữ nguyên...
+  // (dùng XLSX.utils..., XLSX.writeFile... như cũ)
+};
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
