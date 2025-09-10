@@ -32,28 +32,30 @@ export default function App() {
   const ACCESS_PASSWORD = "12345678";
   // Lấy teacher từ URL (nếu có) - chỉ khai báo 1 lần
   function getTeacherFromPath() {
-    const path = window.location.pathname.replace(/^\//, "").toLowerCase();
+    const path = window.location.pathname.replace(/^\/|\/$/g, "").toLowerCase();
     if (!path) return "all";
     const slugMap = {
-      cogiang: "Cô Giang",
-      coduyen: "Cô Duyên",
-      coha: "Cô Hà",
-      coquynh: "Cô Quỳnh",
-      congoc: "Cô Ngọc",
-      cohoa: "Cô Hoa",
-      codiem: "Cô Diễm",
-      cohuyen: "Cô Huyên",
-      colinh: "Cô Linh",
-      cotrinh: "Cô Trinh",
-      cohạnh: "Cô Hạnh",
-      thaycuong: "Thầy Cường",
-      thaybinh: "Thầy Bình",
-      thaytam: "Thầy Tâm",
-      giaoviennuocngoai: "GVNN"
+      a1b2c3d4: "Cô Giang",
+      e5f6g7h8: "Cô Duyên",
+      i9j0k1l2: "Cô Hà",
+      m3n4o5p6: "Cô Quỳnh",
+      q7r8s9t0: "Cô Ngọc",
+      u1v2w3x4: "Cô Hoa",
+      y5z6a7b8: "Cô Diễm",
+      c9d0e1f2: "Cô Huyên",
+      g3h4i5j6: "Cô Linh",
+      k7l8m9n0: "Cô Trinh",
+      o1p2q3r4: "Cô Hạnh",
+      s5t6u7v8: "Thầy Cường",
+      w9x0y1z2: "Thầy Bình",
+      a3b4c5d6: "Thầy Tâm",
+      e7f8g9h0: "GVNN"
     };
-    return slugMap[path] || "all";
+    // Nếu không khớp slug nào thì trả về null
+    return slugMap[path] || (path === "all" ? "all" : null);
   }
-  const isTeacherUrl = getTeacherFromPath() !== "all";
+  const teacherFromPath = getTeacherFromPath();
+  const isTeacherUrl = teacherFromPath && teacherFromPath !== "all";
   // State kiểm soát đăng nhập
   const [isAuthed, setIsAuthed] = React.useState(() => {
     if (isTeacherUrl) return true;
@@ -315,6 +317,18 @@ export default function App() {
 
   if (!isAuthed) return passwordGate;
 
+  // Nếu truy cập url không hợp lệ (không phải giáo viên, không phải trang chính)
+  if (teacherFromPath === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-xs text-center">
+          <div className="mb-4 text-lg font-semibold">404 - Không tìm thấy trang</div>
+          <div className="text-neutral-600">Đường dẫn bạn truy cập không hợp lệ.</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Bộ lọc giáo viên */}
@@ -339,12 +353,14 @@ export default function App() {
         <div className="container flex items-center justify-between py-4">
           <h1 className="text-xl font-semibold">Quản lý thời khóa biểu</h1>
           <div className="flex items-center gap-2">
-            <Button
-              variant={editMode ? "default" : "outline"}
-              onClick={() => setEditMode(e => !e)}
-            >
-              {editMode ? "Đang chỉnh sửa" : "Chỉnh sửa"}
-            </Button>
+            {!isTeacherUrl && (
+              <Button
+                variant={editMode ? "default" : "outline"}
+                onClick={() => setEditMode(e => !e)}
+              >
+                {editMode ? "Đang chỉnh sửa" : "Chỉnh sửa"}
+              </Button>
+            )}
             {!isTeacherUrl && (
               <Button
                 variant="outline"
