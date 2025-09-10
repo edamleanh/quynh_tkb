@@ -29,7 +29,7 @@ const randomColor = () => {
 
 export default function App() {
   // Mật khẩu truy cập (có thể đổi theo ý muốn)
-  const ACCESS_PASSWORD = "123456";
+  const ACCESS_PASSWORD = "12345678";
   // Lấy teacher từ URL (nếu có) - chỉ khai báo 1 lần
   function getTeacherFromPath() {
     const path = window.location.pathname.replace(/^\//, "").toLowerCase();
