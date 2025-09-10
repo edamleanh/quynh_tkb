@@ -1,10 +1,9 @@
-// Firebase config file for timetable-app
 export const firebaseConfig = {
-  apiKey: "AIzaSyAv7TCigGtdzOhheFGdyAncftAAELnWXyM",
-  authDomain: "tkbgrow.firebaseapp.com",
-  projectId: "tkbgrow",
-  storageBucket: "tkbgrow.firebasestorage.app",
-  messagingSenderId: "606320555758",
-  appId: "1:606320555758:web:233b01c6d89d36c65425ff",
-  measurementId: "G-4DRD1DKTNN"
+  apiKey: "AIzaSyBvI2kgBxK1I_5gY9LP9q8EGzqW5i9lU9A",
+  authDomain: "mmuuq-51259.firebaseapp.com",
+  projectId: "mmuuq-51259",
+  storageBucket: "mmuuq-51259.appspot.com", 
+  messagingSenderId: "764559411354",
+  appId: "1:764559411354:web:311629a108357e12baf723",
+  measurementId: "G-EFWK59Q6TN"
 };

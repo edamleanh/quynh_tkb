@@ -3,7 +3,7 @@ import React from "react"
 import html2pdf from "html2pdf.js"
 import { ROOMS, SLOTS, DAYS } from "@/lib/timeTableData"
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 import { firebaseConfig } from "./firebaseConfig";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -79,18 +79,18 @@ export default function App() {
   const app = React.useMemo(() => initializeApp(firebaseConfig), []);
   const db = React.useMemo(() => getFirestore(app), [app]);
 
-  // Đọc dữ liệu Firestore khi load app
+  // Đọc dữ liệu Firestore realtime
   const [items, setItems] = React.useState({});
   React.useEffect(() => {
-    const fetchData = async () => {
-      const docRef = doc(db, "timetables", "main");
-      const docSnap = await getDoc(docRef);
+    const docRef = doc(db, "timetables", "main");
+    const unsub = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         setItems(docSnap.data().items || {});
+      } else {
+        setItems({});
       }
-    };
-    fetchData();
-    // eslint-disable-next-line
+    });
+    return () => unsub();
   }, [db]);
   const [open, setOpen] = React.useState(false)
   const [editingKey, setEditingKey] = React.useState(null)
@@ -105,13 +105,11 @@ export default function App() {
   })
 
 
-  // Ghi dữ liệu Firestore mỗi khi items thay đổi
-  React.useEffect(() => {
-    const saveData = async () => {
-      await setDoc(doc(db, "timetables", "main"), { items });
-    };
-    if (Object.keys(items).length > 0) saveData();
-  }, [items, db]);
+
+  // Hàm lưu dữ liệu Firestore (dùng trong handleSave, handleDelete)
+  const saveItemsToFirestore = async (newItems) => {
+    await setDoc(doc(db, "timetables", "main"), { items: newItems });
+  };
 
   const openCreate = (dayId, slot, room) => {
     setForm({
@@ -170,11 +168,12 @@ export default function App() {
     }
     setItems(prev => {
       let newItems = { ...prev };
-      // Nếu đang sửa và key mới khác key cũ thì xóa key cũ
       if (editingKey && editingKey !== key) {
         delete newItems[editingKey];
       }
       newItems[key] = { subject: form.subject, teacher: form.teacher, note: form.note };
+      // Lưu Firestore
+      saveItemsToFirestore(newItems);
       return newItems;
     });
     toast({ title: editingKey ? "Đã cập nhật" : "Đã thêm lớp" });
@@ -184,12 +183,14 @@ export default function App() {
   const handleDelete = () => {
     if (!editingKey) return
     setItems(prev => {
-      const n = { ...prev }
-      delete n[editingKey]
-      return n
-    })
-    toast({ title: "Đã xóa lớp" })
-    setOpen(false)
+      const n = { ...prev };
+      delete n[editingKey];
+      // Lưu Firestore
+      saveItemsToFirestore(n);
+      return n;
+    });
+    toast({ title: "Đã xóa lớp" });
+    setOpen(false);
   }
 
   // Ref cho bảng thời khóa biểu
