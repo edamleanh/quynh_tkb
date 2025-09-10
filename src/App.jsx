@@ -2,6 +2,9 @@ import React from "react"
 // Thêm import useRef
 import html2pdf from "html2pdf.js"
 import { ROOMS, SLOTS, DAYS } from "@/lib/timeTableData"
+import { initializeApp } from "firebase/app";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { firebaseConfig } from "./firebaseConfig";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -72,10 +75,23 @@ export default function App() {
   }
   const { toast } = useToast()
 
-  const [items, setItems] = React.useState(() => {
-    const raw = localStorage.getItem("ttb-items-v2")
-    return raw ? JSON.parse(raw) : {}
-  })
+  // Firebase init
+  const app = React.useMemo(() => initializeApp(firebaseConfig), []);
+  const db = React.useMemo(() => getFirestore(app), [app]);
+
+  // Đọc dữ liệu Firestore khi load app
+  const [items, setItems] = React.useState({});
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const docRef = doc(db, "timetables", "main");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setItems(docSnap.data().items || {});
+      }
+    };
+    fetchData();
+    // eslint-disable-next-line
+  }, [db]);
   const [open, setOpen] = React.useState(false)
   const [editingKey, setEditingKey] = React.useState(null)
   const [form, setForm] = React.useState({
@@ -88,9 +104,14 @@ export default function App() {
     // color sẽ tự động theo giáo viên
   })
 
+
+  // Ghi dữ liệu Firestore mỗi khi items thay đổi
   React.useEffect(() => {
-    localStorage.setItem("ttb-items-v2", JSON.stringify(items))
-  }, [items])
+    const saveData = async () => {
+      await setDoc(doc(db, "timetables", "main"), { items });
+    };
+    if (Object.keys(items).length > 0) saveData();
+  }, [items, db]);
 
   const openCreate = (dayId, slot, room) => {
     setForm({
