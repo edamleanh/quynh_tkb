@@ -28,8 +28,78 @@ const randomColor = () => {
 }
 
 export default function App() {
+  // Mật khẩu truy cập (có thể đổi theo ý muốn)
+  const ACCESS_PASSWORD = "123456";
+  // State kiểm soát đăng nhập
+  const [isAuthed, setIsAuthed] = React.useState(() => {
+    // Lưu trạng thái vào localStorage để không hỏi lại khi reload
+    return localStorage.getItem("ttb-authed") === "yes";
+  });
+  const [pwInput, setPwInput] = React.useState("");
+  const [pwError, setPwError] = React.useState("");
+  // Hiển thị form nhập mật khẩu nếu chưa xác thực
+  if (!isAuthed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <form
+          className="bg-white p-6 rounded-lg shadow-md w-full max-w-xs"
+          onSubmit={e => {
+            e.preventDefault();
+            if (pwInput === ACCESS_PASSWORD) {
+              setIsAuthed(true);
+              localStorage.setItem("ttb-authed", "yes");
+              setPwError("");
+            } else {
+              setPwError("Sai mật khẩu!");
+            }
+          }}
+        >
+          <div className="mb-4 text-lg font-semibold text-center">Nhập mật khẩu để truy cập</div>
+          <input
+            type="password"
+            className="w-full border rounded px-3 py-2 mb-2"
+            placeholder="Mật khẩu"
+            value={pwInput}
+            onChange={e => setPwInput(e.target.value)}
+            autoFocus
+          />
+          {pwError && <div className="text-red-600 text-sm mb-2">{pwError}</div>}
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          >
+            Đăng nhập
+          </button>
+        </form>
+      </div>
+    );
+  }
   // Thêm state cho bộ lọc giáo viên
-  const [teacherFilter, setTeacherFilter] = React.useState("all");
+  // Nếu URL là /cogiang, tự động lọc theo "Cô Giang"
+  function getTeacherFromPath() {
+    const path = window.location.pathname.replace(/^\//, "").toLowerCase();
+    if (!path) return "all";
+    // Map url slug sang tên giáo viên
+    const slugMap = {
+      cogiang: "Cô Giang",
+      coduyen: "Cô Duyên",
+      coha: "Cô Hà",
+      coquynh: "Cô Quỳnh",
+      congoc: "Cô Ngọc",
+      cohoa: "Cô Hoa",
+      codiem: "Cô Diễm",
+      cohuyen: "Cô Huyên",
+      colinh: "Cô Linh",
+      cotrinh: "Cô Trinh",
+      cohạnh: "Cô Hạnh",
+      thaycuong: "Thầy Cường",
+      thaybinh: "Thầy Bình",
+      thaytam: "Thầy Tâm",
+      giaoviennuocngoai: "Giáo Viên Nước Ngoài"
+    };
+    return slugMap[path] || "all";
+  }
+  const [teacherFilter, setTeacherFilter] = React.useState(getTeacherFromPath());
   // Danh sách giáo viên cố định
   const TEACHERS = [
     "Cô Giang",
@@ -226,23 +296,30 @@ export default function App() {
   // Tên giáo viên đang lọc (nếu có)
   const filterTeacherLabel = teacherFilter !== "all" && teacherFilter ? teacherFilter : null;
 
+  // Nếu truy cập url /cogiang... thì không cho đổi bộ lọc giáo viên (ẩn select)
+  const isTeacherUrl = getTeacherFromPath() !== "all";
+
+  if (!isAuthed) return passwordGate;
+
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Bộ lọc giáo viên */}
-      <div className="container py-4 flex gap-3 items-center">
-        <label className="text-sm text-neutral-700">Lọc theo giáo viên:</label>
-        <Select value={teacherFilter} onValueChange={setTeacherFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Tất cả giáo viên" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả giáo viên</SelectItem>
-            {TEACHERS.map(t => (
-              <SelectItem key={t} value={t}>{t}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!isTeacherUrl && (
+        <div className="container py-4 flex gap-3 items-center">
+          <label className="text-sm text-neutral-700">Lọc theo giáo viên:</label>
+          <Select value={teacherFilter} onValueChange={setTeacherFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Tất cả giáo viên" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả giáo viên</SelectItem>
+              {TEACHERS.map(t => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <Toaster />
       <header className="border-b bg-white">
         <div className="container flex items-center justify-between py-4">
