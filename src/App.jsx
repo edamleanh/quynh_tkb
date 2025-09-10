@@ -31,7 +31,7 @@ export default function App() {
   // Mật khẩu truy cập (có thể đổi theo ý muốn)
   const ACCESS_PASSWORD = "123456";
   // Lấy teacher từ URL (nếu có) - chỉ khai báo 1 lần
-  const getTeacherFromPath = React.useCallback(() => {
+  function getTeacherFromPath() {
     const path = window.location.pathname.replace(/^\//, "").toLowerCase();
     if (!path) return "all";
     const slugMap = {
@@ -52,7 +52,7 @@ export default function App() {
       giaoviennuocngoai: "Giáo Viên Nước Ngoài"
     };
     return slugMap[path] || "all";
-  }, []);
+  }
   const isTeacherUrl = getTeacherFromPath() !== "all";
   // State kiểm soát đăng nhập
   const [isAuthed, setIsAuthed] = React.useState(() => {
@@ -338,20 +338,22 @@ export default function App() {
         <div className="container flex items-center justify-between py-4">
           <h1 className="text-xl font-semibold">Quản lý thời khóa biểu</h1>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={async () => {
-                if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
-                  localStorage.removeItem("ttb-items-v2");
-                  setItems({});
-                  // Xóa luôn trên Firestore
-                  await setDoc(doc(db, "timetables", "main"), { items: {} });
-                  toast({ title: "Đã làm trống thời khóa biểu" });
-                }
-              }}
-            >
-              Làm trống
-            </Button>
+            {!isTeacherUrl && (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
+                    localStorage.removeItem("ttb-items-v2");
+                    setItems({});
+                    // Xóa luôn trên Firestore
+                    await setDoc(doc(db, "timetables", "main"), { items: {} });
+                    toast({ title: "Đã làm trống thời khóa biểu" });
+                  }
+                }}
+              >
+                Làm trống
+              </Button>
+            )}
           </div>
         </div>
       </header>
