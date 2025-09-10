@@ -49,7 +49,7 @@ export default function App() {
       thaycuong: "Thầy Cường",
       thaybinh: "Thầy Bình",
       thaytam: "Thầy Tâm",
-      giaoviennuocngoai: "Giáo Viên Nước Ngoài"
+      giaoviennuocngoai: "GVNN"
     };
     return slugMap[path] || "all";
   }
