@@ -174,49 +174,6 @@ export default function App() {
   // Ref cho bảng thời khóa biểu
   const tableRef = React.useRef(null);
 
-  // Hàm xuất file Excel
-  const handleExportExcel = () => {
-    // Chuẩn bị dữ liệu dạng bảng: [Ngày, Giờ, Phòng, Lớp, Giáo viên, Ghi chú]
-    const data = [];
-    for (const day of DAYS) {
-      for (const slot of SLOTS) {
-        for (const room of ROOMS) {
-          const key = makeKey(day.id, slot, room);
-          const item = items[key];
-          if (item && (teacherFilter === "all" || item.teacher === teacherFilter)) {
-            data.push({
-              Ngay: day.label,
-              Gio: slot,
-              Phong: room.toUpperCase(),
-              Lop: item.subject,
-              "Giao vien": item.teacher,
-              "Ghi chu": item.note || ""
-            });
-          }
-        }
-      }
-    }
-    // Nếu lọc giáo viên thì thêm dòng đầu tiên là tên giáo viên
-    let ws = XLSX.utils.json_to_sheet(data);
-    if (filterTeacherLabel) {
-      XLSX.utils.sheet_add_aoa(ws, [[`GIAO VIEN: ${filterTeacherLabel}`]], { origin: 0 });
-    }
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "TKB");
-    // Tên file
-    let filename = 'thoi-khoa-bieu.xlsx';
-    if (filterTeacherLabel) {
-      const toAscii = (str) => str
-        .normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
-        .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-        .replace(/[^a-zA-Z0-9 ]/g, '')
-        .replace(/\s+/g, '_');
-      const safeName = toAscii(filterTeacherLabel);
-      filename = `thoi-khoa-bieu-${safeName}.xlsx`;
-    }
-    XLSX.writeFile(wb, filename);
-  };
 
   // Hàm xuất PDF chỉ cho bảng
   const handleExportPDF = () => {
@@ -289,9 +246,6 @@ export default function App() {
         <div className="flex justify-end mb-3 no-print gap-2">
           <Button variant="outline" onClick={handleExportPDF}>
             Xuất PDF bảng
-          </Button>
-          <Button variant="outline" onClick={handleExportExcel}>
-            Xuất file Excel
           </Button>
         </div>
         <Card className="shadow-sm">
