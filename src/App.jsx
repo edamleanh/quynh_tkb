@@ -705,22 +705,16 @@ export default function App() {
             </div>
 
             <div>
-              <label className="text-xs text-neutral-500">Ghi chú</label>
-              <Input
-                value={form.note}
-                onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder="VD: Ôn tập kiểm tra"
-              />
+              {/* Ghi chú đã bị loại bỏ */}
             </div>
           </div>
 
-          <DialogFooter className="mt-2">
+          <DialogFooter className="mt-2 flex flex-row gap-2 justify-end">
             {editingKey && (
               <Button variant="destructive" onClick={handleDelete}>
                 Xóa
               </Button>
             )}
-            <div className="flex-1" />
             <Button variant="outline" onClick={() => setOpen(false)}>
               Hủy
             </Button>
