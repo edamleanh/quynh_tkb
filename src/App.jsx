@@ -518,10 +518,10 @@ export default function App() {
             <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
               <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
                 <tr>
-                  <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 60, minWidth: 50}}>
+                  <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-30 bg-neutral-50" style={{width: 60, minWidth: 50}}>
                     Ngày
                   </th>
-                  <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 70, minWidth: 60}}>
+                  <th className="border border-neutral-200 px-2 py-2 text-left sticky left-[60px] z-20 bg-neutral-50" style={{width: 70, minWidth: 60}}>
                     Giờ
                   </th>
                   {ROOMS.map(r => (
@@ -537,17 +537,17 @@ export default function App() {
                     {SLOTS.map((slot, slotIdx) => (
                       <tr key={`${d.id}-${slot}`} className="align-top">
                         {slotIdx === 0 && (
-                          <td
-                            className="border border-neutral-200 px-1 py-2 font-medium bg-white text-[12px] md:text-lg"
-                            rowSpan={SLOTS.length}
-                            style={{width: 60, minWidth: 50}}
-                          >
-                            {d.label}
+                            <td
+                              className="border border-neutral-200 px-1 py-2 font-medium bg-white text-[12px] md:text-lg sticky left-0 z-30 bg-neutral-50"
+                              rowSpan={SLOTS.length}
+                              style={{width: 60, minWidth: 50}}
+                            >
+                              {d.label}
+                            </td>
+                          )}
+                          <td className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-[60px] z-20 bg-neutral-50 text-[12px] md:text-lg" style={{width: 70, minWidth: 60}}>
+                            <span className="text-xs md:text-lg text-neutral-700">{slot}</span>
                           </td>
-                        )}
-                        <td className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-0 z-20 bg-neutral-50 text-[12px] md:text-lg" style={{width: 70, minWidth: 60}}>
-                          <span className="text-xs md:text-lg text-neutral-700">{slot}</span>
-                        </td>
                         {ROOMS.map(room => {
                           const key = makeKey(d.id, slot, room)
                           const item = items[key]
