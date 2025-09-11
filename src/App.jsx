@@ -329,27 +329,32 @@ export default function App() {
     );
   }
 
-  // Nếu là trang giáo viên (ví dụ: /a1b2c3d4) thì chỉ hiển thị bảng thời khóa biểu, không hiển thị gì thêm
-  if (window.location.pathname.replace(/^\/|\/$/g, "") === "a1b2c3d4") {
+  // Nếu là trang giáo viên (ví dụ: /a1b2c3d4, /e5f6g7h8, ...) thì chỉ hiển thị bảng thời khóa biểu, không hiển thị gì thêm
+  const teacherSlugList = [
+    "a1b2c3d4", "e5f6g7h8", "i9j0k1l2", "m3n4o5p6", "q7r8s9t0", "u1v2w3x4", "y5z6a7b8", "c9d0e1f2", "g3h4i5j6", "k7l8m9n0", "o1p2q3r4", "s5t6u7v8", "w9x0y1z2", "a3b4c5d6", "e7f8g9h0"
+  ];
+  const currentSlug = window.location.pathname.replace(/^\/|\/$/g, "");
+  if (teacherSlugList.includes(currentSlug)) {
+    const teacherName = slugMap[currentSlug];
     return (
       <div className="min-h-screen bg-neutral-50">
-        <main className="container py-6">
+        <main className="container py-2 sm:py-6">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="text-lg">
-                Lịch dạy của Cô Giang (Cột dọc: Thứ, Cột ngang: Giờ)
+              <CardTitle className="text-base sm:text-lg">
+                Lịch dạy của {teacherName} (Cột dọc: Thứ, Cột ngang: Giờ)
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="w-full overflow-x-auto" ref={tableRef}>
-                <table className="w-full border border-neutral-200">
-                  <thead className="bg-neutral-100 text-sm">
+                <table className="w-full border border-neutral-200 text-xs sm:text-sm">
+                  <thead className="bg-neutral-100 text-xs sm:text-sm">
                     <tr>
-                      <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
+                      <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 60, minWidth: 50}}>
                         Giờ
                       </th>
                       {DAYS.map(d => (
-                        <th key={d.id} className="border border-neutral-200 px-2 py-2 text-left">
+                        <th key={d.id} className="border border-neutral-200 px-1 py-2 text-left">
                           {d.label}
                         </th>
                       ))}
@@ -358,7 +363,7 @@ export default function App() {
                   <tbody>
                     {SLOTS.map(slot => (
                       <tr key={slot}>
-                        <td className="border border-neutral-200 px-2 py-2 font-medium bg-white sticky left-0 z-10" style={{width: 80, minWidth: 60}}>
+                        <td className="border border-neutral-200 px-1 py-2 font-medium bg-white sticky left-0 z-10" style={{width: 60, minWidth: 50}}>
                           {slot}
                         </td>
                         {DAYS.map(d => {
@@ -366,17 +371,17 @@ export default function App() {
                           const found = ROOMS.map(room => {
                             const key = makeKey(d.id, slot, room);
                             const item = items[key];
-                            if (item && item.teacher === "Cô Giang") {
+                            if (item && item.teacher === teacherName) {
                               return { ...item, room };
                             }
                             return null;
                           }).find(Boolean);
                           if (!found) {
-                            return <td key={d.id} className="border border-neutral-200 p-2 bg-neutral-50" />;
+                            return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50" />;
                           }
                           return (
-                            <td key={d.id} className="border border-neutral-200 p-2">
-                              <div className={`rounded-lg p-1 text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 28, padding: '4px 6px' }}>
+                            <td key={d.id} className="border border-neutral-200 p-1">
+                              <div className={`rounded-lg p-1 text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 24, padding: '2px 4px' }}>
                                 <div className="font-semibold leading-tight text-xs">{found.teacher}</div>
                                 <div className="text-xs">Lớp {found.subject}</div>
                                 <div className="text-xs italic">Phòng: {found.room.toUpperCase()}</div>
