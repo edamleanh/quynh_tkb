@@ -133,8 +133,7 @@ export default function App() {
     "Thầy Tâm",
     "GVNN"
   ];
-
-  // 12 màu thẻ riêng cho giáo viên
+  // Mảng màu thẻ tương ứng giáo viên (cùng index với TEACHERS)
   const TEACHER_COLORS = [
     "bg-pink-100 text-pink-700",
     "bg-green-100 text-green-700",
@@ -326,6 +325,73 @@ export default function App() {
           <div className="mb-4 text-lg font-semibold">404 - Không tìm thấy trang</div>
           <div className="text-neutral-600">Đường dẫn bạn truy cập không hợp lệ.</div>
         </div>
+      </div>
+    );
+  }
+
+  // Nếu là trang giáo viên (ví dụ: /a1b2c3d4) thì chỉ hiển thị bảng thời khóa biểu, không hiển thị gì thêm
+  if (window.location.pathname.replace(/^\/|\/$/g, "") === "a1b2c3d4") {
+    return (
+      <div className="min-h-screen bg-neutral-50">
+        <main className="container py-6">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Lịch dạy của Cô Giang (Cột dọc: Thứ, Cột ngang: Giờ)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="w-full overflow-x-auto" ref={tableRef}>
+                <table className="w-full border border-neutral-200">
+                  <thead className="bg-neutral-100 text-sm">
+                    <tr>
+                      <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
+                        Giờ
+                      </th>
+                      {DAYS.map(d => (
+                        <th key={d.id} className="border border-neutral-200 px-2 py-2 text-left">
+                          {d.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SLOTS.map(slot => (
+                      <tr key={slot}>
+                        <td className="border border-neutral-200 px-2 py-2 font-medium bg-white sticky left-0 z-10" style={{width: 80, minWidth: 60}}>
+                          {slot}
+                        </td>
+                        {DAYS.map(d => {
+                          // Tìm phòng có lớp của giáo viên này ở khung giờ này
+                          const found = ROOMS.map(room => {
+                            const key = makeKey(d.id, slot, room);
+                            const item = items[key];
+                            if (item && item.teacher === "Cô Giang") {
+                              return { ...item, room };
+                            }
+                            return null;
+                          }).find(Boolean);
+                          if (!found) {
+                            return <td key={d.id} className="border border-neutral-200 p-2 bg-neutral-50" />;
+                          }
+                          return (
+                            <td key={d.id} className="border border-neutral-200 p-2">
+                              <div className={`rounded-lg p-1 text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 28, padding: '4px 6px' }}>
+                                <div className="font-semibold leading-tight text-xs">{found.teacher}</div>
+                                <div className="text-xs">Lớp {found.subject}</div>
+                                <div className="text-xs italic">Phòng: {found.room.toUpperCase()}</div>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }
