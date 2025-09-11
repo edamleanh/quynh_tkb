@@ -382,10 +382,10 @@ export default function App() {
                         }
                         return (
                           <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
-                            <div className={`rounded p-1 text-[11px] sm:text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 18, padding: '2px 3px' }}>
-                              <div className="font-semibold leading-tight text-[11px] sm:text-xs">{found.teacher}</div>
-                              <div className="text-[10px] sm:text-xs">Lớp {found.subject}</div>
-                              <div className="text-[10px] sm:text-xs italic">Phòng: {found.room.toUpperCase()}</div>
+                            <div className={`rounded p-1 text-[11px] sm:text-xs ${getTeacherColor(found.teacher)} flex flex-col sm:items-center sm:justify-center`} style={{ minHeight: 18, padding: '2px 3px' }}>
+                              <div className="font-semibold leading-tight text-[11px] sm:text-xs w-full text-left sm:text-center">{found.teacher}</div>
+                              <div className="text-[10px] sm:text-xs w-full text-left sm:text-center">Lớp {found.subject}</div>
+                              <div className="text-[10px] sm:text-xs italic w-full text-left sm:text-center">Phòng: {found.room.toUpperCase()}</div>
                             </div>
                           </td>
                         );
@@ -470,7 +470,7 @@ export default function App() {
           )}
           {filterTeacherLabel ? (
             <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
-              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold sticky top-0 z-40">
+              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
                 <tr>
                   <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 48, minWidth: 40}}>
                     Giờ
@@ -501,13 +501,13 @@ export default function App() {
                         return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50 min-w-[40px]" />;
                       }
                       return (
-                        <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
-                          <div className={`rounded p-1 text-[12px] md:text-lg ${getTeacherColor(found.teacher)}`} style={{ minHeight: 22, padding: '4px 8px' }}>
-                            <div className="font-semibold leading-tight text-[12px] md:text-lg">{found.teacher}</div>
-                            <div className="text-[11px] md:text-base">Lớp {found.subject}</div>
-                            <div className="text-[11px] md:text-base italic">Phòng: {found.room.toUpperCase()}</div>
-                          </div>
-                        </td>
+                          <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
+                            <div className={`rounded p-1 text-[11px] sm:text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 18, padding: '2px 3px' }}>
+                              <div className="font-semibold leading-tight text-[11px] sm:text-xs">{found.teacher}</div>
+                              <div className="text-[10px] sm:text-xs">Lớp {found.subject}</div>
+                              <div className="text-[10px] sm:text-xs italic">Phòng: {found.room.toUpperCase()}</div>
+                            </div>
+                          </td>
                       );
                     })}
                   </tr>
@@ -516,16 +516,26 @@ export default function App() {
             </table>
           ) : (
             <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
-              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold sticky top-0 z-40">
-                <tr className="sticky top-0 z-50 bg-neutral-50">
-                  <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-30 bg-neutral-50" style={{width: 60, minWidth: 50}}>
+              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
+                <tr>
+                  <th
+                    className="border border-neutral-200 px-1 py-2 text-left sticky top-0 left-0 z-30 bg-neutral-50"
+                    style={{width: 60, minWidth: 50}}
+                  >
                     Ngày
                   </th>
-                  <th className="border border-neutral-200 px-2 py-2 text-left sticky left-[60px] z-20 bg-neutral-50" style={{width: 70, minWidth: 60}}>
+                  <th
+                    className="border border-neutral-200 px-2 py-2 text-left sticky top-0 left-[60px] z-20 bg-neutral-50"
+                    style={{width: 70, minWidth: 60}}
+                  >
                     Giờ
                   </th>
-                  {ROOMS.map(r => (
-                    <th key={r} className="border border-neutral-200 px-2 py-2 text-left">
+                  {ROOMS.map((r, idx) => (
+                    <th
+                      key={r}
+                      className="border border-neutral-200 px-2 py-2 text-left sticky top-0 bg-neutral-50"
+                      style={{zIndex: 10}}
+                    >
                       {r.toUpperCase()}
                     </th>
                   ))}
@@ -535,19 +545,22 @@ export default function App() {
                 {DAYS.map((d, dayIdx) => (
                   <React.Fragment key={d.id}>
                     {SLOTS.map((slot, slotIdx) => (
-                      <tr key={`${d.id}-${slot}`} className="align-top">
+                      <tr key={`${d.id}-${slot}`} className="align-top md:h-16">
                         {slotIdx === 0 && (
-                            <td
-                              className="border border-neutral-200 px-1 py-2 font-medium bg-white text-[12px] md:text-lg sticky left-0 z-30 bg-neutral-50"
-                              rowSpan={SLOTS.length}
-                              style={{width: 60, minWidth: 50}}
-                            >
-                              {d.label}
-                            </td>
-                          )}
-                          <td className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-[60px] z-20 bg-neutral-50 text-[12px] md:text-lg" style={{width: 70, minWidth: 60}}>
-                            <span className="text-xs md:text-lg text-neutral-700">{slot}</span>
+                          <td
+                            className="border border-neutral-200 px-1 py-2 font-medium bg-white text-[12px] md:text-lg sticky left-0 z-30 bg-neutral-50"
+                            rowSpan={SLOTS.length}
+                            style={{width: 60, minWidth: 50}}
+                          >
+                            {d.label}
                           </td>
+                        )}
+                        <td
+                          className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-[60px] z-20 bg-neutral-50 text-[12px] md:text-lg"
+                          style={{width: 70, minWidth: 60}}
+                        >
+                          <span className="text-xs md:text-lg text-neutral-700">{slot}</span>
+                        </td>
                         {ROOMS.map(room => {
                           const key = makeKey(d.id, slot, room)
                           const item = items[key]
@@ -564,8 +577,8 @@ export default function App() {
                                 )
                               ) : (
                                 <div
-                                  className={`rounded-lg p-1 cursor-pointer text-[12px] md:text-lg ${getTeacherColor(item.teacher)}`}
-                                  style={{ minHeight: 22, padding: '4px 8px' }}
+                                  className={`rounded-lg p-1 cursor-pointer text-[12px] md:text-lg ${getTeacherColor(item.teacher)} inline-flex items-center`}
+                                  style={{ minHeight: 22, padding: '4px 8px', width: 'fit-content', maxWidth: '100%' }}
                                   onClick={() => editMode && openEdit(d.id, slot, room)}
                                 >
                                   <div className="flex items-center gap-1">
