@@ -30,27 +30,29 @@ const randomColor = () => {
 export default function App() {
   // Mật khẩu truy cập (có thể đổi theo ý muốn)
   const ACCESS_PASSWORD = "12345678";
+  // Định nghĩa slugMap và teacherSlugList ở đầu function App để dùng ở mọi nơi
+  const slugMap = {
+    a1b2c3d4: "Cô Giang",
+    e5f6g7h8: "Cô Duyên",
+    i9j0k1l2: "Cô Hà",
+    m3n4o5p6: "Cô Quỳnh",
+    q7r8s9t0: "Cô Ngọc",
+    u1v2w3x4: "Cô Hoa",
+    y5z6a7b8: "Cô Diễm",
+    c9d0e1f2: "Cô Huyên",
+    g3h4i5j6: "Cô Linh",
+    k7l8m9n0: "Cô Trinh",
+    o1p2q3r4: "Cô Hạnh",
+    s5t6u7v8: "Thầy Cường",
+    w9x0y1z2: "Thầy Bình",
+    a3b4c5d6: "Thầy Tâm",
+    e7f8g9h0: "GVNN"
+  };
+  const teacherSlugList = Object.keys(slugMap);
   // Lấy teacher từ URL (nếu có) - chỉ khai báo 1 lần
   function getTeacherFromPath() {
     const path = window.location.pathname.replace(/^\/|\/$/g, "").toLowerCase();
     if (!path) return "all";
-    const slugMap = {
-      a1b2c3d4: "Cô Giang",
-      e5f6g7h8: "Cô Duyên",
-      i9j0k1l2: "Cô Hà",
-      m3n4o5p6: "Cô Quỳnh",
-      q7r8s9t0: "Cô Ngọc",
-      u1v2w3x4: "Cô Hoa",
-      y5z6a7b8: "Cô Diễm",
-      c9d0e1f2: "Cô Huyên",
-      g3h4i5j6: "Cô Linh",
-      k7l8m9n0: "Cô Trinh",
-      o1p2q3r4: "Cô Hạnh",
-      s5t6u7v8: "Thầy Cường",
-      w9x0y1z2: "Thầy Bình",
-      a3b4c5d6: "Thầy Tâm",
-      e7f8g9h0: "GVNN"
-    };
     // Nếu không khớp slug nào thì trả về null
     return slugMap[path] || (path === "all" ? "all" : null);
   }
@@ -330,9 +332,6 @@ export default function App() {
   }
 
   // Nếu là trang giáo viên (ví dụ: /a1b2c3d4, /e5f6g7h8, ...) thì chỉ hiển thị bảng thời khóa biểu, không hiển thị gì thêm
-  const teacherSlugList = [
-    "a1b2c3d4", "e5f6g7h8", "i9j0k1l2", "m3n4o5p6", "q7r8s9t0", "u1v2w3x4", "y5z6a7b8", "c9d0e1f2", "g3h4i5j6", "k7l8m9n0", "o1p2q3r4", "s5t6u7v8", "w9x0y1z2", "a3b4c5d6", "e7f8g9h0"
-  ];
   const currentSlug = window.location.pathname.replace(/^\/|\/$/g, "");
   if (teacherSlugList.includes(currentSlug)) {
     const teacherName = slugMap[currentSlug];
