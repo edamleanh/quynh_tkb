@@ -347,6 +347,7 @@ export default function App() {
             <div className="w-full overflow-x-auto" ref={tableRef}>
               <table className="w-full border border-neutral-200 text-[11px] sm:text-xs bg-white rounded-lg shadow-sm">
                 <thead className="bg-neutral-50 text-[10px] sm:text-xs">
+                  {/* Header: ẩn trên mobile, hiện trên sm trở lên */}
                   <tr className="hidden sm:table-row">
                     <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 48, minWidth: 40}}>
                       Giờ
@@ -365,6 +366,7 @@ export default function App() {
                       <td className="border border-neutral-200 px-1 py-1 font-medium bg-white sticky left-0 z-10 text-[11px] sm:text-xs" style={{width: 48, minWidth: 40}}>
                         {slot}
                       </td>
+                      {/* Luôn render đủ các cột thứ 2 đến CN, không ẩn trên mobile */}
                       {DAYS.map(d => {
                         // Tìm phòng có lớp của giáo viên này ở khung giờ này
                         const found = ROOMS.map(room => {
