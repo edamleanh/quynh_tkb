@@ -336,66 +336,65 @@ export default function App() {
   if (teacherSlugList.includes(currentSlug)) {
     const teacherName = slugMap[currentSlug];
     return (
-      <div className="min-h-screen bg-neutral-50">
-        <main className="container py-2 sm:py-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg">
-                Lịch dạy của {teacherName} (Cột dọc: Thứ, Cột ngang: Giờ)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="w-full overflow-x-auto" ref={tableRef}>
-                <table className="w-full border border-neutral-200 text-xs sm:text-sm">
-                  <thead className="bg-neutral-100 text-xs sm:text-sm">
-                    <tr>
-                      <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 60, minWidth: 50}}>
-                        Giờ
+      <div className="min-h-screen bg-neutral-100">
+        <div className="w-full max-w-full px-0 sm:px-2 py-2 flex flex-col items-center">
+          {/* Ẩn header trên mobile, chỉ hiện trên sm trở lên */}
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="text-sm sm:text-base font-semibold text-center mb-2 sm:mb-4 text-blue-700">
+              <span className="hidden sm:inline">Lịch dạy của {teacherName} (Cột dọc: Thứ, Cột ngang: Giờ)</span>
+              <span className="inline sm:hidden">Lịch dạy: {teacherName}</span>
+            </div>
+            <div className="w-full overflow-x-auto" ref={tableRef}>
+              <table className="w-full border border-neutral-200 text-[11px] sm:text-xs bg-white rounded-lg shadow-sm">
+                <thead className="bg-neutral-50 text-[10px] sm:text-xs">
+                  <tr className="hidden sm:table-row">
+                    <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 48, minWidth: 40}}>
+                      Giờ
+                    </th>
+                    {DAYS.map(d => (
+                      <th key={d.id} className="border border-neutral-200 px-1 py-2 text-left">
+                        {d.label}
                       </th>
-                      {DAYS.map(d => (
-                        <th key={d.id} className="border border-neutral-200 px-1 py-2 text-left">
-                          {d.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {SLOTS.map(slot => (
-                      <tr key={slot}>
-                        <td className="border border-neutral-200 px-1 py-2 font-medium bg-white sticky left-0 z-10" style={{width: 60, minWidth: 50}}>
-                          {slot}
-                        </td>
-                        {DAYS.map(d => {
-                          // Tìm phòng có lớp của giáo viên này ở khung giờ này
-                          const found = ROOMS.map(room => {
-                            const key = makeKey(d.id, slot, room);
-                            const item = items[key];
-                            if (item && item.teacher === teacherName) {
-                              return { ...item, room };
-                            }
-                            return null;
-                          }).find(Boolean);
-                          if (!found) {
-                            return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50" />;
-                          }
-                          return (
-                            <td key={d.id} className="border border-neutral-200 p-1">
-                              <div className={`rounded-lg p-1 text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 24, padding: '2px 4px' }}>
-                                <div className="font-semibold leading-tight text-xs">{found.teacher}</div>
-                                <div className="text-xs">Lớp {found.subject}</div>
-                                <div className="text-xs italic">Phòng: {found.room.toUpperCase()}</div>
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </main>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SLOTS.map(slot => (
+                    <tr key={slot}>
+                      {/* Giờ học: luôn hiện, nhỏ hơn trên mobile */}
+                      <td className="border border-neutral-200 px-1 py-1 font-medium bg-white sticky left-0 z-10 text-[11px] sm:text-xs" style={{width: 48, minWidth: 40}}>
+                        {slot}
+                      </td>
+                      {DAYS.map(d => {
+                        // Tìm phòng có lớp của giáo viên này ở khung giờ này
+                        const found = ROOMS.map(room => {
+                          const key = makeKey(d.id, slot, room);
+                          const item = items[key];
+                          if (item && item.teacher === teacherName) {
+                            return { ...item, room };
+                          }
+                          return null;
+                        }).find(Boolean);
+                        if (!found) {
+                          return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50 min-w-[40px]" />;
+                        }
+                        return (
+                          <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
+                            <div className={`rounded p-1 text-[11px] sm:text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 18, padding: '2px 3px' }}>
+                              <div className="font-semibold leading-tight text-[11px] sm:text-xs">{found.teacher}</div>
+                              <div className="text-[10px] sm:text-xs">Lớp {found.subject}</div>
+                              <div className="text-[10px] sm:text-xs italic">Phòng: {found.room.toUpperCase()}</div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
