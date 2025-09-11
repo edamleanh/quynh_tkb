@@ -405,10 +405,10 @@ export default function App() {
     <div className="min-h-screen bg-neutral-50">
       {/* Bộ lọc giáo viên */}
       {!isTeacherUrl && (
-        <div className="container py-4 flex gap-3 items-center">
-          <label className="text-sm text-neutral-700">Lọc theo giáo viên:</label>
+        <div className="w-full px-2 py-2 flex gap-2 items-center text-xs sm:text-sm">
+          <label className="text-xs sm:text-sm text-neutral-700 whitespace-nowrap">Lọc giáo viên:</label>
           <Select value={teacherFilter} onValueChange={setTeacherFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-36 sm:w-48 h-8 sm:h-9 text-xs sm:text-sm">
               <SelectValue placeholder="Tất cả giáo viên" />
             </SelectTrigger>
             <SelectContent>
@@ -421,12 +421,14 @@ export default function App() {
         </div>
       )}
       <Toaster />
-      <header className="border-b bg-white">
-        <div className="container flex items-center justify-between py-4">
-          <h1 className="text-xl font-semibold">Quản lý thời khóa biểu</h1>
-          <div className="flex items-center gap-2">
+      <header className="border-b bg-white/90 shadow-sm">
+        <div className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-4">
+          <h1 className="text-base md:text-2xl font-bold tracking-tight text-blue-800">Quản lý thời khóa biểu</h1>
+          <div className="flex items-center gap-1 md:gap-4">
             {!isTeacherUrl && (
               <Button
+                size="sm"
+                className="px-2 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm"
                 variant={editMode ? "default" : "outline"}
                 onClick={() => setEditMode(e => !e)}
               >
@@ -435,6 +437,8 @@ export default function App() {
             )}
             {!isTeacherUrl && (
               <Button
+                size="sm"
+                className="px-2 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm"
                 variant="outline"
                 onClick={async () => {
                   if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
@@ -452,159 +456,140 @@ export default function App() {
         </div>
       </header>
 
-      <main className="container py-6">
-        <div className="flex justify-end mb-3 no-print gap-2">
-          <Button variant="outline" onClick={handleExportPDF}>
-            Xuất PDF bảng
+  <main className="w-full max-w-full px-0 sm:px-2 py-2 sm:py-6 mx-auto">
+        <div className="flex justify-end mb-2 sm:mb-3 no-print gap-1 sm:gap-2">
+          <Button size="sm" className="px-2 md:px-6 h-8 md:h-11 text-xs md:text-lg" variant="outline" onClick={handleExportPDF}>
+            Xuất PDF
           </Button>
         </div>
-        {/* Nếu lọc giáo viên chỉ định thì đổi bảng: cột dọc là thứ, cột ngang là giờ */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {filterTeacherLabel
-                ? `Lịch dạy của ${filterTeacherLabel} (Cột dọc: Thứ, Cột ngang: Giờ)`
-                : "Lịch theo ngày (Hàng: Thứ 2 → CN, Cột: P1 → P6)"}
-            </CardTitle>
-            {filterTeacherLabel && (
-              <div className="mt-2 text-base font-semibold text-blue-700 print:block hidden" id="teacher-filter-print">
-                Giáo viên: {filterTeacherLabel}
-              </div>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="w-full overflow-x-auto" ref={tableRef}>
-              {filterTeacherLabel && (
-                <div className="mb-2 text-base font-semibold text-blue-700 block print:block" id="teacher-filter-pdf">
-                  Giáo viên: {filterTeacherLabel}
-                </div>
-              )}
-              {filterTeacherLabel ? (
-                <table className="w-full border border-neutral-200">
-                  <thead className="bg-neutral-100 text-sm">
-                    <tr>
-                      <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
-                        Giờ
-                      </th>
-                      {DAYS.map(d => (
-                        <th key={d.id} className="border border-neutral-200 px-2 py-2 text-left">
-                          {d.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {SLOTS.map(slot => (
-                      <tr key={slot}>
-                        <td className="border border-neutral-200 px-2 py-2 font-medium bg-white sticky left-0 z-10" style={{width: 80, minWidth: 60}}>
-                          {slot}
+        <div className="w-full overflow-x-auto" ref={tableRef}>
+          {filterTeacherLabel && (
+            <div className="mb-2 text-xs sm:text-base font-semibold text-blue-700 block print:block" id="teacher-filter-pdf">
+              Giáo viên: {filterTeacherLabel}
+            </div>
+          )}
+          {filterTeacherLabel ? (
+            <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
+              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
+                <tr>
+                  <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 48, minWidth: 40}}>
+                    Giờ
+                  </th>
+                  {DAYS.map(d => (
+                    <th key={d.id} className="border border-neutral-200 px-1 py-2 text-left">
+                      {d.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {SLOTS.map(slot => (
+                  <tr key={slot}>
+                    <td className="border border-neutral-200 px-1 py-1 font-medium bg-white sticky left-0 z-10 text-[12px] md:text-lg" style={{width: 48, minWidth: 40}}>
+                      {slot}
+                    </td>
+                    {DAYS.map(d => {
+                      const found = ROOMS.map(room => {
+                        const key = makeKey(d.id, slot, room);
+                        const item = items[key];
+                        if (item && item.teacher === filterTeacherLabel) {
+                          return { ...item, room };
+                        }
+                        return null;
+                      }).find(Boolean);
+                      if (!found) {
+                        return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50 min-w-[40px]" />;
+                      }
+                      return (
+                        <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
+                          <div className={`rounded p-1 text-[12px] md:text-lg ${getTeacherColor(found.teacher)}`} style={{ minHeight: 22, padding: '4px 8px' }}>
+                            <div className="font-semibold leading-tight text-[12px] md:text-lg">{found.teacher}</div>
+                            <div className="text-[11px] md:text-base">Lớp {found.subject}</div>
+                            <div className="text-[11px] md:text-base italic">Phòng: {found.room.toUpperCase()}</div>
+                          </div>
                         </td>
-                        {DAYS.map(d => {
-                          // Tìm phòng có lớp của giáo viên này ở khung giờ này
-                          const found = ROOMS.map(room => {
-                            const key = makeKey(d.id, slot, room);
-                            const item = items[key];
-                            if (item && item.teacher === filterTeacherLabel) {
-                              return { ...item, room };
-                            }
-                            return null;
-                          }).find(Boolean);
-                          if (!found) {
-                            return <td key={d.id} className="border border-neutral-200 p-2 bg-neutral-50" />;
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
+              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
+                <tr>
+                  <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 60, minWidth: 50}}>
+                    Ngày
+                  </th>
+                  <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 70, minWidth: 60}}>
+                    Giờ
+                  </th>
+                  {ROOMS.map(r => (
+                    <th key={r} className="border border-neutral-200 px-2 py-2 text-left">
+                      {r.toUpperCase()}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {DAYS.map((d, dayIdx) => (
+                  <React.Fragment key={d.id}>
+                    {SLOTS.map((slot, slotIdx) => (
+                      <tr key={`${d.id}-${slot}`} className="align-top">
+                        {slotIdx === 0 && (
+                          <td
+                            className="border border-neutral-200 px-1 py-2 font-medium bg-white text-[12px] md:text-lg"
+                            rowSpan={SLOTS.length}
+                            style={{width: 60, minWidth: 50}}
+                          >
+                            {d.label}
+                          </td>
+                        )}
+                        <td className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-0 z-20 bg-neutral-50 text-[12px] md:text-lg" style={{width: 70, minWidth: 60}}>
+                          <span className="text-xs md:text-lg text-neutral-700">{slot}</span>
+                        </td>
+                        {ROOMS.map(room => {
+                          const key = makeKey(d.id, slot, room)
+                          const item = items[key]
+                          if (teacherFilter !== "all" && teacherFilter && (!item || item.teacher !== teacherFilter)) {
+                            return <td key={key} className="border border-neutral-200 p-1 bg-neutral-50" />
                           }
                           return (
-                            <td key={d.id} className="border border-neutral-200 p-2">
-                              <div className={`rounded-lg p-1 text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 28, padding: '4px 6px' }}>
-                                <div className="font-semibold leading-tight text-xs">{found.teacher}</div>
-                                <div className="text-xs">Lớp {found.subject}</div>
-                                <div className="text-xs italic">Phòng: {found.room.toUpperCase()}</div>
-                              </div>
+                            <td key={key} className="border border-neutral-200 p-1">
+                              {!item ? (
+                                editMode && (
+                                  <Button size="sm" className="px-1 h-7 text-xs md:text-base" variant="ghost" onClick={() => openCreate(d.id, slot, room)}>
+                                    + Thêm lớp
+                                  </Button>
+                                )
+                              ) : (
+                                <div
+                                  className={`rounded-lg p-1 cursor-pointer text-[12px] md:text-lg ${getTeacherColor(item.teacher)}`}
+                                  style={{ minHeight: 22, padding: '4px 8px' }}
+                                  onClick={() => editMode && openEdit(d.id, slot, room)}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {!!item.teacher && (
+                                      <span className="text-[11px] md:text-lg opacity-80 font-bold">{item.teacher}</span>
+                                    )}
+                                    <span className="font-semibold leading-tight text-[12px] md:text-lg">- Lớp {item.subject}</span>
+                                  </div>
+                                </div>
+                              )}
                             </td>
-                          );
+                          )
                         })}
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-              ) : (
-                // ...existing code for bảng mặc định...
-                <table className="w-full border border-neutral-200">
-                  <thead className="bg-neutral-100 text-sm">
-                    <tr>
-                      <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 70, minWidth: 60}}>
-                        Ngày
-                      </th>
-                      <th className="border border-neutral-200 px-2 py-2 text-left sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
-                        Giờ
-                      </th>
-                      {ROOMS.map(r => (
-                        <th key={r} className="border border-neutral-200 px-3 py-2 text-left">
-                          {r.toUpperCase()}
-                        </th>
-                      ))}
+                    <tr aria-hidden>
+                      <td colSpan={ROOMS.length + 2} className="h-2 bg-neutral-50" />
                     </tr>
-                  </thead>
-                  <tbody>
-                    {DAYS.map((d, dayIdx) => (
-                      <React.Fragment key={d.id}>
-                        {SLOTS.map((slot, slotIdx) => (
-                          <tr key={`${d.id}-${slot}`} className="align-top">
-                            {slotIdx === 0 && (
-                              <td
-                                className="border border-neutral-200 px-1 py-2 font-medium bg-white"
-                                rowSpan={SLOTS.length}
-                                style={{width: 70, minWidth: 60}}
-                              >
-                                {d.label}
-                              </td>
-                            )}
-                            <td className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-0 z-20 bg-neutral-100" style={{width: 80, minWidth: 60}}>
-                              <span className="text-sm text-neutral-700">{slot}</span>
-                            </td>
-                            {ROOMS.map(room => {
-                              const key = makeKey(d.id, slot, room)
-                              const item = items[key]
-                              if (teacherFilter !== "all" && teacherFilter && (!item || item.teacher !== teacherFilter)) {
-                                return <td key={key} className="border border-neutral-200 p-2 bg-neutral-50" />
-                              }
-                              return (
-                                <td key={key} className="border border-neutral-200 p-2">
-                                  {!item ? (
-                                    editMode && (
-                                      <Button size="sm" variant="ghost" onClick={() => openCreate(d.id, slot, room)}>
-                                        + Thêm lớp
-                                      </Button>
-                                    )
-                                  ) : (
-                                    <div
-                                      className={`rounded-lg p-1 cursor-pointer text-xs ${getTeacherColor(item.teacher)}`}
-                                      style={{ minHeight: 28, padding: '4px 6px' }}
-                                      onClick={() => editMode && openEdit(d.id, slot, room)}
-                                    >
-                                      <div className="flex items-center gap-1">
-                                        {!!item.teacher && (
-                                          <span className="text-[10px] opacity-80 font-bold">{item.teacher}</span>
-                                        )}
-                                        <span className="font-semibold leading-tight text-xs">- Lớp {item.subject}</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </td>
-                              )
-                            })}
-                          </tr>
-                        ))}
-                        <tr aria-hidden>
-                          <td colSpan={ROOMS.length + 2} className="h-2 bg-neutral-50" />
-                        </tr>
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </main>
 
       {/* Dialog thêm/sửa */}
