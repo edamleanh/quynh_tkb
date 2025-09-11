@@ -441,6 +441,12 @@ export default function App() {
                 className="px-2 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm"
                 variant="outline"
                 onClick={async () => {
+                  const pw = window.prompt("Nhập mật khẩu để xác nhận làm trống toàn bộ thời khóa biểu:");
+                  if (pw === null) return; // user cancelled
+                  if (pw !== ACCESS_PASSWORD) {
+                    toast({ title: "Sai mật khẩu!", description: "Bạn đã nhập sai mật khẩu xác nhận." });
+                    return;
+                  }
                   if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
                     localStorage.removeItem("ttb-items-v2");
                     setItems({});
