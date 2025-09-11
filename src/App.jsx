@@ -516,8 +516,8 @@ export default function App() {
             </table>
           ) : (
             <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
-              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
-                <tr className="sticky top-0 z-40 bg-neutral-50">
+              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold sticky top-0 z-40">
+                <tr className="sticky top-0 z-50 bg-neutral-50">
                   <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-30 bg-neutral-50" style={{width: 60, minWidth: 50}}>
                     Ngày
                   </th>
