@@ -585,7 +585,10 @@ export default function App() {
                                     {!!item.teacher && (
                                       <span className="text-[11px] md:text-lg opacity-80 font-bold">{item.teacher}</span>
                                     )}
-                                    <span className="font-semibold leading-tight text-[12px] md:text-lg">Lớp {item.subject}</span>
+                                    <span className="font-semibold leading-tight text-[12px] md:text-lg">
+                                      <span className="hidden md:inline">- </span>
+                                      Lớp {item.subject}
+                                    </span>
                                   </div>
                                 </div>
                               )}
