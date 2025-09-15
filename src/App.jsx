@@ -349,7 +349,7 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-[80px_repeat(7,1fr)]">
+      <div className="grid grid-cols-[85px_repeat(7,1fr)]">
         {/* cột giờ bên trái */}
         <div />
         {DAYS.map(d => (
@@ -365,7 +365,7 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
             const hour = START_HOUR + i
             // Không còn đường kẻ ngang giữa các giờ
             return (
-              <div key={hour} className="relative h-[65px]">
+              <div key={hour} className="relative h-[80px]">
                 <div className="absolute -top-3 right-2 text-xs text-muted-foreground">{fmtHourLabel(hour)}</div>
               </div>
             )
@@ -395,7 +395,7 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
   // vạch kẻ mỗi giờ
   // Số phút trong 1 giờ (dùng để tính pixel)
   const MINUTES_PER_HOUR = 60;
-  const HOUR_HEIGHT = 65; // px, phải khớp với .h-[60px] ở trên
+  const HOUR_HEIGHT = 85; // px, phải khớp với .h-[60px] ở trên
   const MIN_HEIGHT = 1; // px, tối thiểu để không bị ẩn
   return (
     <div className="relative border-l" title={label}>
