@@ -29,30 +29,30 @@ const TOTAL_MIN = (END_HOUR - START_HOUR) * 60 // 900 phút
 
 const OFFICIAL_SUBJECTS = [
   { id: "math",     name: "Toán",          color: "bg-blue-100 text-blue-700 border-blue-300" },
-  { id: "lit",      name: "Ngữ văn",       color: "bg-sky-100 text-sky-700 border-sky-300" },
-  { id: "eng",      name: "Anh văn",       color: "bg-violet-100 text-violet-700 border-violet-300" },
-  { id: "art",      name: "Mĩ thuật",      color: "bg-pink-100 text-pink-700 border-pink-300" },
-  { id: "bio",      name: "Sinh Học",      color: "bg-amber-100 text-amber-800 border-amber-300" },
-  { id: "chem",     name: "Hóa học",       color: "bg-rose-100 text-rose-700 border-rose-300" },
-  { id: "civics",   name: "GDCD",          color: "bg-gray-100 text-gray-700 border-gray-300" },
-  { id: "comp",     name: "Tin học",       color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
-  { id: "geo",      name: "Địa lí",        color: "bg-green-100 text-green-700 border-green-300" },
-  { id: "hist",     name: "Lịch sử",       color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
-  { id: "music",    name: "Âm nhạc",       color: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300" },
-  { id: "pe",       name: "Thể Dục",       color: "bg-lime-100 text-lime-700 border-lime-300" },
-  { id: "phys",     name: "Vật lí",        color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
-  { id: "tech",     name: "Công nghệ",     color: "bg-orange-100 text-orange-700 border-orange-300" },
-    { id: "flag",     name: "Chào cờ",       color: "bg-red-100 text-red-700 border-red-300" },
-  { id: "shcn",     name: "SHCN",          color: "bg-teal-100 text-teal-700 border-teal-300" },
+  { id: "lit",      name: "Ngữ văn",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "eng",      name: "Anh văn",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "art",      name: "Mĩ thuật",      color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "bio",      name: "Sinh Học",      color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "chem",     name: "Hóa học",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "civics",   name: "GDCD",          color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "comp",     name: "Tin học",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "geo",      name: "Địa lí",        color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "hist",     name: "Lịch sử",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "music",    name: "Âm nhạc",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "pe",       name: "Thể Dục",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "phys",     name: "Vật lí",        color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "tech",     name: "Công nghệ",     color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "flag",     name: "Chào cờ",       color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "shcn",     name: "SHCN",          color: "bg-blue-100 text-blue-700 border-blue-300" },
 ]
 
 // Thay EXTRA_SUBJECTS bằng hook động
 function getDefaultExtraSubjects() {
   return [
-    { id: "mathplus", name: "Toán nâng cao", color: "bg-blue-50 text-blue-800 border-blue-200" },
-    { id: "engplus",  name: "Tiếng Anh nâng cao", color: "bg-violet-50 text-violet-800 border-violet-200" },
-    { id: "physplus", name: "Lý chuyên đề", color: "bg-emerald-50 text-emerald-800 border-emerald-200" },
-    { id: "chemplus", name: "Hóa chuyên đề", color: "bg-rose-50 text-rose-800 border-rose-200" },
+    { id: "mathplus", name: "Toán nâng cao", color: "bg-green-100 text-green-700 border-green-300" },
+    { id: "engplus",  name: "Tiếng Anh nâng cao", color: "bg-green-100 text-green-700 border-green-300" },
+    { id: "physplus", name: "Lý chuyên đề", color: "bg-green-100 text-green-700 border-green-300" },
+    { id: "chemplus", name: "Hóa chuyên đề", color: "bg-green-100 text-green-700 border-green-300" },
   ];
 }
 
@@ -102,13 +102,8 @@ function ExtraSubjectsManager({ open, onOpenChange, extraSubjects, setExtraSubje
   }
 
   function pickColor() {
-    const used = getUsedColors();
-    // Chọn màu đầu tiên chưa dùng
-    for (const c of COLOR_POOL) {
-      if (!used.has(c)) return c;
-    }
-    // Nếu hết màu, dùng màu xám
-    return "bg-gray-50 text-gray-800 border-gray-200";
+    // Luôn trả về màu xanh lá cho tất cả môn học thêm
+    return "bg-green-100 text-green-700 border-green-300";
   }
 
   function addSubject() {
@@ -366,11 +361,10 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
         <div className="border-r">
           {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
             const hour = START_HOUR + i
-            // hàng giờ là ô cao 60px; đường kẻ mỗi giờ (trừ dòng đầu)
+            // Không còn đường kẻ ngang giữa các giờ
             return (
               <div key={hour} className="relative h-[65px]">
                 <div className="absolute -top-3 right-2 text-xs text-muted-foreground">{fmtHourLabel(hour)}</div>
-                {i !== 0 && <div className="absolute top-0 left-0 right-0 h-px bg-border" />}
               </div>
             )
           })}
@@ -396,7 +390,7 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
     <div className="relative border-l" title={label}>
       {/* nền lưới giờ */}
       {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
-        <div key={i} className="h-[60px] border-t border-border/70" />
+        <div key={i} className="h-[60px]" />
       ))}
       {/* render sự kiện (absolute) */}
       <div className="absolute inset-0">
@@ -420,10 +414,13 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
                 {/* Không hiển thị tiêu đề */}
                 <div className="mt-0.5 text-[10px] opacity-80">{ev.start} – {ev.end}</div>
                 {ev.note && <div className="mt-0.5 text-[10px] italic text-gray-500 line-clamp-2">{ev.note}</div>}
-                <div className="mt-1 flex gap-1 items-center flex-nowrap">
-                  <Badge variant="outline" className="h-5 text-[10px] whitespace-nowrap">{subj?.name || ev.subject}</Badge>
+                <div className={`mt-1 flex ${ev.type === "hocthem" ? "flex-col items-start gap-0.5" : "flex-row items-center gap-1"}`}>
+                  <Badge variant="outline" className="h-5 text-[11px] whitespace-nowrap">{subj?.name || ev.subject}</Badge>
                   {ev.type === "hocthem" && (
-                    <Badge variant="destructive" className="h-5 text-[10px] whitespace-nowrap">Học thêm</Badge>
+                    <Badge variant="destructive" className="h-5 text-[11px] whitespace-nowrap mt-0.5">Học thêm</Badge>
+                  )}
+                  {ev.type === "chinhthuc" && (
+                    <Badge variant="success" className="h-5 text-[11px] whitespace-nowrap mt-0.5">Trường</Badge>
                   )}
                 </div>
                 <button
@@ -532,7 +529,7 @@ export default function App() {
           </CardHeader>
           <CardContent>
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">Màu theo môn học:</span>
+              {/* <span className="text-sm text-muted-foreground">Màu theo môn học:</span>
               <span className="font-semibold text-sm">Môn chính thức:</span>
               {OFFICIAL_SUBJECTS.map(s => (
                 <span key={s.id} className={`px-2 py-1 rounded border text-xs ${s.color}`}>{s.name}</span>
@@ -540,7 +537,7 @@ export default function App() {
               <span className="font-semibold text-sm ml-4">Môn học thêm:</span>
               {extraSubjects.map(s => (
                 <span key={s.id} className={`px-2 py-1 rounded border text-xs ${s.color}`}>{s.name}</span>
-              ))}
+              ))} */}
               <button className="ml-4 px-2 py-1 rounded bg-slate-200 text-xs border hover:bg-slate-300" onClick={() => setShowExtraManager(true)}>
                 Tuỳ chỉnh môn học thêm
               </button>
