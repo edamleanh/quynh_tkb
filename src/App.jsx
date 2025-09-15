@@ -520,9 +520,10 @@ export default function App() {
 
   return (
     <div className="w-full flex flex-col items-center">
-      <h1 className="text-3xl font-bold text-blue-800 mb-2 mt-4">Thời khoá biểu của Lê Ngọc Như Quỳnh</h1>
-      <div className="max-w-[1500px] pl-2 pr-2 pt-4 pb-4 flex flex-row gap-4 w-full">
-      <div className="flex-1 min-w-0">
+      <h1 className="text-2xl sm:text-3xl font-bold text-blue-800 mb-2 mt-4 text-center px-2">Thời khoá biểu của Lê Ngọc Như Quỳnh</h1>
+      <div className="w-full max-w-full overflow-x-auto">
+        <div className="min-w-[600px] max-w-[1500px] mx-auto pt-2 pb-4 flex flex-col sm:flex-row gap-2 sm:gap-4">
+          <div className="flex-1 min-w-0">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-2xl">Thời khoá biểu (7:00 → 22:00)</CardTitle>
@@ -536,7 +537,7 @@ export default function App() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
               {/* <span className="text-sm text-muted-foreground">Màu theo môn học:</span>
               <span className="font-semibold text-sm">Môn chính thức:</span>
               {OFFICIAL_SUBJECTS.map(s => (
@@ -551,54 +552,57 @@ export default function App() {
               </button>
             </div>
             <ExtraSubjectsManager open={showExtraManager} onOpenChange={setShowExtraManager} extraSubjects={extraSubjects} setExtraSubjects={setExtraSubjects} />
-            <WeekGrid events={events} onDelete={deleteEvent} extraSubjects={extraSubjects} />
-          </CardContent>
-        </Card>
-  <AddEventDialog open={open} onOpenChange={setOpen} onAdd={addEvent} extraSubjects={extraSubjects} events={events} />
-  </div>
-  {/* Sidebar phải */}
-  <div className="w-[320px] flex-shrink-0">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Lịch hôm nay</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-2">
-              <span className="font-semibold">Bây giờ: </span>
-              {(() => {
-                const { tzDate } = getNowInfo();
-                return tzDate.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Bangkok" });
-              })()}
-            </div>
-            <div className="mb-3">
-              <div className="font-semibold text-green-700">Đang diễn ra:</div>
-              {current ? (
-                <div className="mt-1 p-2 rounded border bg-green-50">
-                  <div><b>{(() => {
-                    const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === current.subject);
-                    return subj?.name || current.subject;
-                  })()}</b></div>
-                  <div>{current.start} – {current.end}</div>
-                  <div className="text-xs text-gray-500">{current.note}</div>
-                </div>
-              ) : <div className="text-xs text-gray-500">Không có tiết nào đang diễn ra</div>}
-            </div>
-            <div>
-              <div className="font-semibold text-blue-700">Sắp diễn ra:</div>
-              {next ? (
-                <div className="mt-1 p-2 rounded border bg-blue-50">
-                  <div><b>{(() => {
-                    const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === next.subject);
-                    return subj?.name || next.subject;
-                  })()}</b></div>
-                  <div>{next.start} – {next.end}</div>
-                  <div className="text-xs text-gray-500">{next.note}</div>
-                </div>
-              ) : <div className="text-xs text-gray-500">Không có tiết nào sắp diễn ra</div>}
+            <div className="overflow-x-auto">
+              <WeekGrid events={events} onDelete={deleteEvent} extraSubjects={extraSubjects} />
             </div>
           </CardContent>
         </Card>
-      </div>
+            <AddEventDialog open={open} onOpenChange={setOpen} onAdd={addEvent} extraSubjects={extraSubjects} events={events} />
+          </div>
+          {/* Sidebar phải: ẩn trên mobile */}
+          <div className="w-full sm:w-[320px] flex-shrink-0 hidden sm:block">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Lịch hôm nay</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-2">
+                  <span className="font-semibold">Bây giờ: </span>
+                  {(() => {
+                    const { tzDate } = getNowInfo();
+                    return tzDate.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Bangkok" });
+                  })()}
+                </div>
+                <div className="mb-3">
+                  <div className="font-semibold text-green-700">Đang diễn ra:</div>
+                  {current ? (
+                    <div className="mt-1 p-2 rounded border bg-green-50">
+                      <div><b>{(() => {
+                        const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === current.subject);
+                        return subj?.name || current.subject;
+                      })()}</b></div>
+                      <div>{current.start} – {current.end}</div>
+                      <div className="text-xs text-gray-500">{current.note}</div>
+                    </div>
+                  ) : <div className="text-xs text-gray-500">Không có tiết nào đang diễn ra</div>}
+                </div>
+                <div>
+                  <div className="font-semibold text-blue-700">Sắp diễn ra:</div>
+                  {next ? (
+                    <div className="mt-1 p-2 rounded border bg-blue-50">
+                      <div><b>{(() => {
+                        const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === next.subject);
+                        return subj?.name || next.subject;
+                      })()}</b></div>
+                      <div>{next.start} – {next.end}</div>
+                      <div className="text-xs text-gray-500">{next.note}</div>
+                    </div>
+                  ) : <div className="text-xs text-gray-500">Không có tiết nào sắp diễn ra</div>}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
