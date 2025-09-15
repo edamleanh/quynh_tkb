@@ -193,6 +193,26 @@ function AddEventDialog({ open, onOpenChange, onAdd, extraSubjects, events }) {
     }
   }, [type, extraSubjects])
 
+  // Nếu là chính thức, khi đổi giờ bắt đầu thì tự set giờ kết thúc = giờ bắt đầu + 45 phút
+  React.useEffect(() => {
+    if (type === "chinhthuc" && start) {
+      // Tính giờ kết thúc mới
+      const [h, m] = start.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        let total = h * 60 + m + 45;
+        let newH = Math.floor(total / 60);
+        let newM = total % 60;
+        // Nếu vượt quá END_HOUR thì giới hạn
+        if (newH > END_HOUR) {
+          newH = END_HOUR;
+          newM = 0;
+        }
+        const pad = n => n.toString().padStart(2, "0");
+        setEnd(`${pad(newH)}:${pad(newM)}`);
+      }
+    }
+  }, [start, type]);
+
   function isOverlap(newStart, newEnd, existingStart, existingEnd) {
     // Trả về true nếu [newStart, newEnd) giao với [existingStart, existingEnd)
     return newStart < existingEnd && existingStart < newEnd;
@@ -350,6 +370,10 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
 function DayColumn({ day, events, onDelete, label, extraSubjects }) {
   // cột là relative container, cao theo 15 giờ * 60px = 900px
   // vạch kẻ mỗi giờ
+  // Số phút trong 1 giờ (dùng để tính pixel)
+  const MINUTES_PER_HOUR = 60;
+  const HOUR_HEIGHT = 60; // px, phải khớp với .h-[60px] ở trên
+  const MIN_HEIGHT = 1; // px, tối thiểu để không bị ẩn
   return (
     <div className="relative border-l" title={label}>
       {/* nền lưới giờ */}
@@ -362,17 +386,17 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
           .slice()
           .sort((a, b) => minutesFrom0700(a.start) - minutesFrom0700(b.start))
           .map((ev) => {
-            const sM = clampToRange(minutesFrom0700(ev.start))
-            const eM = clampToRange(minutesFrom0700(ev.end))
-            const top = toPct(sM)
-            const height = toPct(Math.max(15, eM - sM)) // tối thiểu 15' để dễ thấy
+            const sM = clampToRange(minutesFrom0700(ev.start));
+            const eM = clampToRange(minutesFrom0700(ev.end));
+            const topPx = (sM / MINUTES_PER_HOUR) * HOUR_HEIGHT;
+            const heightPx = Math.max(MIN_HEIGHT, ((eM - sM) / MINUTES_PER_HOUR) * HOUR_HEIGHT);
             const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === ev.subject)
             const color = subj?.color ?? "bg-gray-100 text-gray-700 border-gray-300"
             return (
               <div
                 key={ev.id}
                 className={`absolute left-1 right-1 rounded-lg border px-2 py-1 shadow-sm ${color}`}
-                style={{ top, height }}
+                style={{ top: `${topPx}px`, height: `${heightPx}px` }}
                 title={`${ev.title} • ${ev.start}–${ev.end}`}
               >
                 {/* Không hiển thị tiêu đề */}
@@ -469,7 +493,7 @@ export default function App() {
   const { current, next } = getCurrentAndNextEvents();
 
   return (
-    <div className="max-w-[1400px] pl-2 pr-2 pt-4 pb-4 flex flex-row gap-4">
+    <div className="max-w-[1500px] pl-2 pr-2 pt-4 pb-4 flex flex-row gap-4">
       <div className="flex-1 min-w-0">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
