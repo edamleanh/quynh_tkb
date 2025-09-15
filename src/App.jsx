@@ -1,733 +1,552 @@
-import React from "react"
-// Thêm import useRef
-import html2pdf from "html2pdf.js"
-import { ROOMS, SLOTS, DAYS } from "@/lib/timeTableData"
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
-import { firebaseConfig } from "./firebaseConfig";
+import React, { useMemo, useState, useEffect } from "react"
+import { saveTimetable, loadTimetable } from "./lib/firebase"
+
+// ⬇️ Nếu chưa có alias "@/...", hãy đổi sang "./components/ui/..."
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+// Simple Label component (do not import)
+function Label({ children, className = "", ...props }) {
+  return <label className={"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 " + className} {...props}>{children}</label>;
+}
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
 
-const makeKey = (dayId, slot, room) => `${dayId}|${slot}|${room}`
+// ---------- cấu hình ----------
+const DAYS = [
+  { id: "Mon", label: "Thứ 2" },
+  { id: "Tue", label: "Thứ 3" },
+  { id: "Wed", label: "Thứ 4" },
+  { id: "Thu", label: "Thứ 5" },
+  { id: "Fri", label: "Thứ 6" },
+  { id: "Sat", label: "Thứ 7" },
+  { id: "CN", label: "Chủ nhật" },
+]
+const START_HOUR = 7    // 7:00
+const END_HOUR = 22     // 22:00 (10PM)
+const TOTAL_MIN = (END_HOUR - START_HOUR) * 60 // 900 phút
 
-const randomColor = () => {
-  const colors = [
-    "bg-blue-100 text-blue-700",
-    "bg-green-100 text-green-700",
-    "bg-amber-100 text-amber-700",
-    "bg-purple-100 text-purple-700",
-    "bg-pink-100 text-pink-700",
-  ]
-  return colors[Math.floor(Math.random() * colors.length)]
+const OFFICIAL_SUBJECTS = [
+  { id: "math",     name: "Toán",          color: "bg-blue-100 text-blue-700 border-blue-300" },
+  { id: "lit",      name: "Ngữ văn",       color: "bg-sky-100 text-sky-700 border-sky-300" },
+  { id: "eng",      name: "Anh văn",       color: "bg-violet-100 text-violet-700 border-violet-300" },
+  { id: "art",      name: "Mĩ thuật",      color: "bg-pink-100 text-pink-700 border-pink-300" },
+  { id: "bio",      name: "Sinh Học",      color: "bg-amber-100 text-amber-800 border-amber-300" },
+  { id: "chem",     name: "Hóa học",       color: "bg-rose-100 text-rose-700 border-rose-300" },
+  { id: "civics",   name: "GDCD",          color: "bg-gray-100 text-gray-700 border-gray-300" },
+  { id: "comp",     name: "Tin học",       color: "bg-cyan-100 text-cyan-700 border-cyan-300" },
+  { id: "geo",      name: "Địa lí",        color: "bg-green-100 text-green-700 border-green-300" },
+  { id: "hist",     name: "Lịch sử",       color: "bg-yellow-100 text-yellow-700 border-yellow-300" },
+  { id: "music",    name: "Âm nhạc",       color: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300" },
+  { id: "pe",       name: "Thể Dục",       color: "bg-lime-100 text-lime-700 border-lime-300" },
+  { id: "phys",     name: "Vật lí",        color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
+  { id: "tech",     name: "Công nghệ",     color: "bg-orange-100 text-orange-700 border-orange-300" },
+]
+
+// Thay EXTRA_SUBJECTS bằng hook động
+function getDefaultExtraSubjects() {
+  return [
+    { id: "mathplus", name: "Toán nâng cao", color: "bg-blue-50 text-blue-800 border-blue-200" },
+    { id: "engplus",  name: "Tiếng Anh nâng cao", color: "bg-violet-50 text-violet-800 border-violet-200" },
+    { id: "physplus", name: "Lý chuyên đề", color: "bg-emerald-50 text-emerald-800 border-emerald-200" },
+    { id: "chemplus", name: "Hóa chuyên đề", color: "bg-rose-50 text-rose-800 border-rose-200" },
+  ];
 }
 
-export default function App() {
-  // Mật khẩu truy cập (có thể đổi theo ý muốn)
-  const ACCESS_PASSWORD = "12345678";
-  // Định nghĩa slugMap và teacherSlugList ở đầu function App để dùng ở mọi nơi
-  const slugMap = {
-    a1b2c3d4: "Cô Giang",
-    e5f6g7h8: "Cô Duyên",
-    i9j0k1l2: "Cô Hà",
-    m3n4o5p6: "Cô Quỳnh",
-    q7r8s9t0: "Cô Ngọc",
-    u1v2w3x4: "Cô Hoa",
-    y5z6a7b8: "Cô Diễm",
-    c9d0e1f2: "Cô Huyên",
-    g3h4i5j6: "Cô Linh",
-    k7l8m9n0: "Cô Trinh",
-    o1p2q3r4: "Cô Hạnh",
-    s5t6u7v8: "Thầy Cường",
-    w9x0y1z2: "Thầy Bình",
-    a3b4c5d6: "Thầy Tâm",
-    e7f8g9h0: "GVNN"
-  };
-  const teacherSlugList = Object.keys(slugMap);
-  // Lấy teacher từ URL (nếu có) - chỉ khai báo 1 lần
-  function getTeacherFromPath() {
-    const path = window.location.pathname.replace(/^\/|\/$/g, "").toLowerCase();
-    if (!path) return "all";
-    // Nếu không khớp slug nào thì trả về null
-    return slugMap[path] || (path === "all" ? "all" : null);
-  }
-  const teacherFromPath = getTeacherFromPath();
-  const isTeacherUrl = teacherFromPath && teacherFromPath !== "all";
-  // State kiểm soát đăng nhập
-  const [isAuthed, setIsAuthed] = React.useState(() => {
-    if (isTeacherUrl) return true;
-    return localStorage.getItem("ttb-authed") === "yes";
+function useExtraSubjects() {
+  const [extraSubjects, setExtraSubjects] = React.useState(() => {
+    try {
+      const raw = localStorage.getItem("extra-subjects-v1");
+      return raw ? JSON.parse(raw) : getDefaultExtraSubjects();
+    } catch {
+      return getDefaultExtraSubjects();
+    }
   });
-  // Đảm bảo khi localStorage thay đổi thì App sẽ render lại
   React.useEffect(() => {
-    if (!isTeacherUrl) {
-      const handler = () => {
-        setIsAuthed(localStorage.getItem("ttb-authed") === "yes");
-      };
-      window.addEventListener("storage", handler);
-      return () => window.removeEventListener("storage", handler);
-    }
-  }, [isTeacherUrl]);
-  // Force update để render lại App khi đăng nhập thành công
-  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-  const [pwInput, setPwInput] = React.useState("");
-  const [pwError, setPwError] = React.useState("");
-  // Hiển thị form nhập mật khẩu nếu chưa xác thực (và không phải URL giáo viên)
-  if (!isAuthed && !isTeacherUrl) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
-        <form
-          className="bg-white p-6 rounded-lg shadow-md w-full max-w-xs"
-          onSubmit={e => {
-            e.preventDefault();
-            if (pwInput === ACCESS_PASSWORD) {
-              localStorage.setItem("ttb-authed", "yes");
-              setIsAuthed(true);
-              setPwError("");
-              window.location.reload(); // reload lại app để chắc chắn render đúng
-            } else {
-              setPwError("Sai mật khẩu!");
-            }
-          }}
-        >
-          <div className="mb-4 text-lg font-semibold text-center">Nhập mật khẩu để truy cập</div>
-          <input
-            type="password"
-            className="w-full border rounded px-3 py-2 mb-2"
-            placeholder="Mật khẩu"
-            value={pwInput}
-            onChange={e => setPwInput(e.target.value)}
-            autoFocus
-          />
-          {pwError && <div className="text-red-600 text-sm mb-2">{pwError}</div>}
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-          >
-            Đăng nhập
-          </button>
-        </form>
-      </div>
-    );
-  }
-  // Thêm state cho bộ lọc giáo viên, chỉ khai báo 1 lần
-  const [teacherFilter, setTeacherFilter] = React.useState(getTeacherFromPath());
-  // Danh sách giáo viên cố định
-  const TEACHERS = [
-    "Cô Giang",
-    "Cô Duyên",
-    "Cô Hà",
-    "Cô Quỳnh",
-    "Cô Ngọc",
-    "Cô Hoa",
-    "Cô Diễm",
-    "Cô Huyên",
-    "Cô Linh",
-    "Cô Trinh",
-    "Cô Hạnh",
-    "Thầy Cường",
-    "Thầy Bình",
-    "Thầy Tâm",
-    "GVNN"
-  ];
-  // Mảng màu thẻ tương ứng giáo viên (cùng index với TEACHERS)
-  const TEACHER_COLORS = [
-    "bg-pink-100 text-pink-700",
-    "bg-green-100 text-green-700",
-    "bg-amber-100 text-amber-700",
-    "bg-purple-100 text-purple-700",
-    "bg-blue-100 text-blue-700",
-    "bg-pink-100 text-pink-700",
-    "bg-red-100 text-red-700",
-    "bg-cyan-100 text-cyan-700",
-    "bg-lime-100 text-lime-700",
-    "bg-fuchsia-100 text-fuchsia-700",
-    "bg-orange-100 text-orange-700",
-    "bg-teal-100 text-teal-700",
-    "bg-indigo-100 text-indigo-700",
-    "bg-gray-100 text-gray-700",
-    "bg-red-100 text-red-700",
-    "bg-yellow-100 text-yellow-700"
+    localStorage.setItem("extra-subjects-v1", JSON.stringify(extraSubjects));
+  }, [extraSubjects]);
+  return [extraSubjects, setExtraSubjects];
+}
+
+function ExtraSubjectsManager({ open, onOpenChange, extraSubjects, setExtraSubjects }) {
+  const [name, setName] = React.useState("");
+
+  // Danh sách màu khả dụng, không trùng với OFFICIAL_SUBJECTS và extraSubjects hiện tại
+  const COLOR_POOL = [
+    "bg-blue-50 text-blue-800 border-blue-200",
+    "bg-violet-50 text-violet-800 border-violet-200",
+    "bg-emerald-50 text-emerald-800 border-emerald-200",
+    "bg-rose-50 text-rose-800 border-rose-200",
+    "bg-amber-50 text-amber-800 border-amber-200",
+    "bg-gray-50 text-gray-800 border-gray-200",
+    "bg-pink-50 text-pink-800 border-pink-200",
+    "bg-green-50 text-green-800 border-green-200",
+    "bg-cyan-50 text-cyan-800 border-cyan-200",
+    "bg-orange-50 text-orange-800 border-orange-200",
+    "bg-lime-50 text-lime-800 border-lime-200",
+    "bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200",
+    "bg-teal-50 text-teal-800 border-teal-200",
+    "bg-indigo-50 text-indigo-800 border-indigo-200",
+    "bg-yellow-50 text-yellow-800 border-yellow-200",
+    "bg-red-50 text-red-800 border-red-200",
   ];
 
-  // Hàm lấy màu theo giáo viên
-  function getTeacherColor(teacher) {
-    const idx = TEACHERS.indexOf(teacher);
-    return idx >= 0 ? TEACHER_COLORS[idx % TEACHER_COLORS.length] : "bg-gray-100 text-gray-700";
+  function getUsedColors() {
+    // Lấy tất cả màu đã dùng ở OFFICIAL_SUBJECTS và extraSubjects
+    const officialColors = OFFICIAL_SUBJECTS.map(s => s.color);
+    const extraColors = extraSubjects.map(s => s.color);
+    return new Set([...officialColors, ...extraColors]);
   }
-  const { toast } = useToast()
 
-  // Firebase init
-  const app = React.useMemo(() => initializeApp(firebaseConfig), []);
-  const db = React.useMemo(() => getFirestore(app), [app]);
+  function pickColor() {
+    const used = getUsedColors();
+    // Chọn màu đầu tiên chưa dùng
+    for (const c of COLOR_POOL) {
+      if (!used.has(c)) return c;
+    }
+    // Nếu hết màu, dùng màu xám
+    return "bg-gray-50 text-gray-800 border-gray-200";
+  }
 
-  // Đọc dữ liệu Firestore realtime
-  const [items, setItems] = React.useState({});
+  function addSubject() {
+    if (!name.trim()) return;
+    const color = pickColor();
+    setExtraSubjects(prev => [...prev, { id: rid(), name: name.trim(), color }]);
+    setName("");
+  }
+  function deleteSubject(id) {
+    setExtraSubjects(prev => prev.filter(s => s.id !== id));
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Tuỳ chỉnh môn học thêm</DialogTitle>
+        </DialogHeader>
+        <div className="mb-2 flex flex-wrap gap-2">
+          {extraSubjects.map(s => (
+            <span key={s.id} className={`px-2 py-1 rounded border text-xs ${s.color} flex items-center gap-1`}>
+              {s.name}
+              <button className="ml-1 text-red-500 hover:underline" onClick={() => deleteSubject(s.id)}>x</button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2 items-center">
+          <input className="border rounded px-2 py-1 text-xs" placeholder="Tên môn học thêm..." value={name} onChange={e => setName(e.target.value)} />
+          <Button className="px-2 py-1 text-xs" onClick={addSubject}>Thêm</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------- helpers ----------
+function minutesFrom0700(timeHHmm) {
+  // timeHHmm dạng "HH:MM" (24h). Trả về số phút kể từ 07:00.
+  const [hStr, mStr] = timeHHmm.split(":")
+  const h = parseInt(hStr, 10)
+  const m = parseInt(mStr, 10)
+  return (h - START_HOUR) * 60 + m
+}
+
+function clampToRange(mins) {
+  // Giới hạn sự kiện nằm trong [0, TOTAL_MIN]
+  return Math.max(0, Math.min(TOTAL_MIN, mins))
+}
+
+function toPct(mins) {
+  return `${(mins / TOTAL_MIN) * 100}%`
+}
+
+function fmtHourLabel(h) {
+  // 7 -> "7 AM", 13 -> "1 PM"
+  const suffix = h < 12 ? "AM" : "PM"
+  const base = ((h + 11) % 12) + 1
+  return `${base} ${suffix}`
+}
+
+// Tạo ID ngẫu nhiên nhẹ nhàng
+const rid = () => Math.random().toString(36).slice(2, 9)
+
+// ---------- component thêm sự kiện ----------
+
+
+function AddEventDialog({ open, onOpenChange, onAdd, extraSubjects, events }) {
+  const [day, setDay] = useState("Mon")
+  const [type, setType] = useState("chinhthuc")
+  const [subject, setSubject] = useState("")
+  const [start, setStart] = useState("07:30")
+  const [end, setEnd] = useState("09:00")
+  const [note, setNote] = useState("")
+
+  // Chọn danh sách môn học theo loại
+  const subjectOptions = type === "chinhthuc" ? OFFICIAL_SUBJECTS : extraSubjects
+
+  // Đảm bảo subject luôn hợp lệ khi đổi loại
   React.useEffect(() => {
-    const docRef = doc(db, "timetables", "main");
-    const unsub = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setItems(docSnap.data().items || {});
-      } else {
-        setItems({});
-      }
-    });
-    return () => unsub();
-  }, [db]);
-  const [open, setOpen] = React.useState(false)
-  const [editingKey, setEditingKey] = React.useState(null)
-  const [form, setForm] = React.useState({
-    dayId: DAYS[0]?.id || '',
-    slot: SLOTS[0] || '',
-    room: ROOMS[0] || '',
-    subject: "",
-    teacher: TEACHERS[0] || '',
-    note: "",
-    // color sẽ tự động theo giáo viên
-  })
-
-  // Thêm state kiểm soát chế độ chỉnh sửa
-  const [editMode, setEditMode] = React.useState(false);
-
-  // Hàm lưu dữ liệu Firestore (dùng trong handleSave, handleDelete)
-  const saveItemsToFirestore = async (newItems) => {
-    await setDoc(doc(db, "timetables", "main"), { items: newItems });
-  };
-
-  const openCreate = (dayId, slot, room) => {
-    setForm({
-      dayId: dayId || DAYS[0]?.id || '',
-      slot: slot || SLOTS[0] || '',
-      room: room || ROOMS[0] || '',
-      subject: "",
-      teacher: TEACHERS[0] || '',
-      note: ""
-    })
-    setEditingKey(null)
-    setOpen(true)
-  }
-
-  const openEdit = (dayId, slot, room) => {
-    const key = makeKey(dayId, slot, room)
-    const data = items[key]
-    if (!data) return
-    setForm({
-      dayId: dayId || DAYS[0]?.id || '',
-      slot: slot || SLOTS[0] || '',
-      room: room || ROOMS[0] || '',
-      subject: data.subject || '',
-      teacher: data.teacher || TEACHERS[0] || '',
-      note: data.note || ''
-    })
-    setEditingKey(key)
-    setOpen(true)
-  }
-
-  const handleSave = () => {
-    if (!form.subject?.trim()) {
-      toast({ title: "Thiếu thông tin", description: "Vui lòng nhập tên lớp học." })
-      return
+    if (type === "chinhthuc" && subject && !OFFICIAL_SUBJECTS.some(s => s.id === subject)) {
+      setSubject(OFFICIAL_SUBJECTS[0]?.id || "")
     }
-    const key = makeKey(form.dayId, form.slot, form.room);
-    // Kiểm tra trùng phòng cùng khung giờ, ngày (trừ chính lớp đang sửa)
-    const isRoomConflict = Object.entries(items).some(([k, v]) => {
-      if (editingKey && k === editingKey) return false;
-      const [d, s, r] = k.split("|");
-      return d === form.dayId && s === form.slot && r === form.room;
-    });
-    if (isRoomConflict) {
-      toast({ title: "Trùng phòng", description: "Phòng này đã có lớp ở khung giờ này!" });
+    if (type === "hocthem" && subject && !extraSubjects.some(s => s.id === subject)) {
+      setSubject(extraSubjects[0]?.id || "")
+    }
+  }, [type, extraSubjects])
+
+  function isOverlap(newStart, newEnd, existingStart, existingEnd) {
+    // Trả về true nếu [newStart, newEnd) giao với [existingStart, existingEnd)
+    return newStart < existingEnd && existingStart < newEnd;
+  }
+
+  function submit() {
+    // kiểm tra hợp lệ cơ bản
+    if (!subject) {
+      alert("Vui lòng chọn môn học!");
       return;
     }
-    // Kiểm tra trùng giáo viên cùng khung giờ, ngày (trừ chính lớp đang sửa)
-    const isTeacherConflict = Object.entries(items).some(([k, v]) => {
-      if (editingKey && k === editingKey) return false;
-      const [d, s, r] = k.split("|");
-      return d === form.dayId && s === form.slot && v.teacher === form.teacher && form.teacher;
-    });
-    if (isTeacherConflict) {
-      toast({ title: "Trùng giáo viên", description: "Giáo viên này đã có lớp ở khung giờ này!" });
+    const s = minutesFrom0700(start)
+    const e = minutesFrom0700(end)
+    if (isNaN(s) || isNaN(e)) return
+    if (e <= s) return alert("Giờ kết thúc phải > giờ bắt đầu.")
+    if (s < 0 || e > TOTAL_MIN) {
+      const ok = confirm("Sự kiện nằm ngoài khung 7:00–22:00. Vẫn thêm (sẽ tự cắt trong khung)?")
+      if (!ok) return
+    }
+    // Kiểm tra trùng lịch
+    const overlap = (events || []).some(ev => ev.day === day && isOverlap(s, e, minutesFrom0700(ev.start), minutesFrom0700(ev.end)));
+    if (overlap) {
+      alert("Lịch bị trùng với một sự kiện đã có!");
       return;
     }
-    setItems(prev => {
-      let newItems = { ...prev };
-      if (editingKey && editingKey !== key) {
-        delete newItems[editingKey];
-      }
-      newItems[key] = { subject: form.subject, teacher: form.teacher, note: form.note };
-      // Lưu Firestore
-      saveItemsToFirestore(newItems);
-      return newItems;
-    });
-    toast({ title: editingKey ? "Đã cập nhật" : "Đã thêm lớp" });
-    setOpen(false);
-  }
-
-  const handleDelete = () => {
-    if (!editingKey) return
-    setItems(prev => {
-      const n = { ...prev };
-      delete n[editingKey];
-      // Lưu Firestore
-      saveItemsToFirestore(n);
-      return n;
-    });
-    toast({ title: "Đã xóa lớp" });
-    setOpen(false);
-  }
-
-  // Ref cho bảng thời khóa biểu
-  const tableRef = React.useRef(null);
-
-
-  // Hàm xuất PDF chỉ cho bảng
-  const handleExportPDF = () => {
-    if (!tableRef.current) return;
-    let filename = 'thoi-khoa-bieu.pdf';
-    if (filterTeacherLabel) {
-      // Chuyển tiếng Việt sang không dấu, thay dấu cách bằng _
-      const toAscii = (str) => str
-        .normalize('NFD')
-        .replace(/\p{Diacritic}/gu, '')
-        .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-        .replace(/[^a-zA-Z0-9 ]/g, '')
-        .replace(/\s+/g, '_');
-      const safeName = toAscii(filterTeacherLabel);
-      filename = `thoi-khoa-bieu-${safeName}.pdf`;
-    }
-    html2pdf()
-      .set({
-        margin: 0.2,
-        filename,
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      })
-      .from(tableRef.current)
-      .save();
-  };
-
-  // Tên giáo viên đang lọc (nếu có)
-  const filterTeacherLabel = teacherFilter !== "all" && teacherFilter ? teacherFilter : null;
-
-  // Nếu truy cập url /cogiang... thì không cho đổi bộ lọc giáo viên (ẩn select)
-  // Đã khai báo isTeacherUrl ở đầu function, không cần khai báo lại
-
-  if (!isAuthed) return passwordGate;
-
-  // Nếu truy cập url không hợp lệ (không phải giáo viên, không phải trang chính)
-  if (teacherFromPath === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
-        <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-xs text-center">
-          <div className="mb-4 text-lg font-semibold">404 - Không tìm thấy trang</div>
-          <div className="text-neutral-600">Đường dẫn bạn truy cập không hợp lệ.</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Nếu là trang giáo viên (ví dụ: /a1b2c3d4, /e5f6g7h8, ...) thì chỉ hiển thị bảng thời khóa biểu, không hiển thị gì thêm
-  const currentSlug = window.location.pathname.replace(/^\/|\/$/g, "");
-  if (teacherSlugList.includes(currentSlug)) {
-    const teacherName = slugMap[currentSlug];
-    return (
-      <div className="min-h-screen bg-neutral-100">
-        <div className="w-full max-w-full px-0 sm:px-2 py-2 flex flex-col items-center">
-          {/* Ẩn header trên mobile, chỉ hiện trên sm trở lên */}
-          <div className="w-full max-w-2xl mx-auto">
-            <div className="text-sm sm:text-base font-semibold text-center mb-2 sm:mb-4 text-blue-700">
-              <span className="hidden sm:inline">Lịch dạy của {teacherName} (Cột dọc: Thứ, Cột ngang: Giờ)</span>
-              <span className="inline sm:hidden">Lịch dạy: {teacherName}</span>
-            </div>
-            <div className="w-full overflow-x-auto" ref={tableRef}>
-              <table className="w-full border border-neutral-200 text-[11px] sm:text-xs bg-white rounded-lg shadow-sm">
-                <thead className="bg-neutral-50 text-[10px] sm:text-xs">
-                  {/* Luôn hiện header trên mọi thiết bị */}
-                  <tr>
-                    <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 48, minWidth: 40}}>
-                      Giờ
-                    </th>
-                    {DAYS.map(d => (
-                      <th key={d.id} className="border border-neutral-200 px-1 py-2 text-left">
-                        {d.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {SLOTS.map(slot => (
-                    <tr key={slot}>
-                      {/* Giờ học: luôn hiện, nhỏ hơn trên mobile */}
-                      <td className="border border-neutral-200 px-1 py-1 font-medium bg-white sticky left-0 z-10 text-[11px] sm:text-xs" style={{width: 48, minWidth: 40}}>
-                        {slot}
-                      </td>
-                      {/* Luôn render đủ các cột thứ 2 đến CN, không ẩn trên mobile */}
-                      {DAYS.map(d => {
-                        // Tìm phòng có lớp của giáo viên này ở khung giờ này
-                        const found = ROOMS.map(room => {
-                          const key = makeKey(d.id, slot, room);
-                          const item = items[key];
-                          if (item && item.teacher === teacherName) {
-                            return { ...item, room };
-                          }
-                          return null;
-                        }).find(Boolean);
-                        if (!found) {
-                          return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50 min-w-[40px]" />;
-                        }
-                        return (
-                          <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
-                            <div className={`rounded p-1 text-[11px] sm:text-xs ${getTeacherColor(found.teacher)} flex flex-col sm:items-center sm:justify-center`} style={{ minHeight: 18, padding: '2px 3px' }}>
-                              <div className="font-semibold leading-tight text-[11px] sm:text-xs w-full text-left sm:text-center">{found.teacher}</div>
-                              <div className="text-[10px] sm:text-xs w-full text-left sm:text-center">Lớp {found.subject}</div>
-                              <div className="text-[10px] sm:text-xs italic w-full text-left sm:text-center">Phòng: {found.room.toUpperCase()}</div>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    onAdd({
+      id: rid(),
+      day,
+      subject,
+      type,
+      start, end,
+      note: note.trim(),
+    })
+    setStart("07:30")
+    setEnd("09:00")
+    setNote("")
+    setType("chinhthuc")
+    onOpenChange(false)
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Bộ lọc giáo viên */}
-      {!isTeacherUrl && (
-        <div className="w-full px-2 py-2 flex gap-2 items-center text-xs sm:text-sm">
-          <label className="text-xs sm:text-sm text-neutral-700 whitespace-nowrap">Lọc giáo viên:</label>
-          <Select value={teacherFilter} onValueChange={setTeacherFilter}>
-            <SelectTrigger className="w-36 sm:w-48 h-8 sm:h-9 text-xs sm:text-sm">
-              <SelectValue placeholder="Tất cả giáo viên" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả giáo viên</SelectItem>
-              {TEACHERS.map(t => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-      <Toaster />
-      <header className="border-b bg-white/90 shadow-sm">
-        <div className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-4">
-          <h1 className="text-base md:text-2xl font-bold tracking-tight text-blue-800">Quản lý thời khóa biểu</h1>
-          <div className="flex items-center gap-1 md:gap-4">
-            {!isTeacherUrl && (
-              <Button
-                size="sm"
-                className="px-2 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm"
-                variant={editMode ? "default" : "outline"}
-                onClick={() => setEditMode(e => !e)}
-              >
-                {editMode ? "Đang chỉnh sửa" : "Chỉnh sửa"}
-              </Button>
-            )}
-            {!isTeacherUrl && (
-              <Button
-                size="sm"
-                className="px-2 sm:px-4 h-8 sm:h-9 text-xs sm:text-sm"
-                variant="outline"
-                onClick={async () => {
-                  const pw = window.prompt("Nhập mật khẩu để xác nhận làm trống toàn bộ thời khóa biểu:");
-                  if (pw === null) return; // user cancelled
-                  if (pw !== ACCESS_PASSWORD) {
-                    toast({ title: "Sai mật khẩu!", description: "Bạn đã nhập sai mật khẩu xác nhận." });
-                    return;
-                  }
-                  if (window.confirm("Bạn có chắc chắn muốn làm trống toàn bộ thời khóa biểu?")) {
-                    localStorage.removeItem("ttb-items-v2");
-                    setItems({});
-                    await setDoc(doc(db, "timetables", "main"), { items: {} });
-                    toast({ title: "Đã làm trống thời khóa biểu" });
-                  }
-                }}
-              >
-                Làm trống
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Thêm lịch học</DialogTitle>
+        </DialogHeader>
 
-  <main className="w-full max-w-full px-0 sm:px-2 py-2 sm:py-6 mx-auto">
-        <div className="flex justify-end mb-2 sm:mb-3 no-print gap-1 sm:gap-2">
-          <Button size="sm" className="px-2 md:px-6 h-8 md:h-11 text-xs md:text-lg" variant="outline" onClick={handleExportPDF}>
-            Xuất PDF
-          </Button>
-        </div>
-        <div className="w-full overflow-x-auto" ref={tableRef}>
-          {filterTeacherLabel && (
-            <div className="mb-2 text-xs sm:text-base font-semibold text-blue-700 block print:block" id="teacher-filter-pdf">
-              Giáo viên: {filterTeacherLabel}
-            </div>
-          )}
-          {filterTeacherLabel ? (
-            <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
-              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
-                <tr>
-                  <th className="border border-neutral-200 px-1 py-2 text-left sticky left-0 z-20 bg-neutral-50" style={{width: 48, minWidth: 40}}>
-                    Giờ
-                  </th>
-                  {DAYS.map(d => (
-                    <th key={d.id} className="border border-neutral-200 px-1 py-2 text-left">
-                      {d.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {SLOTS.map(slot => (
-                  <tr key={slot}>
-                    <td className="border border-neutral-200 px-1 py-1 font-medium bg-white sticky left-0 z-10 text-[12px] md:text-lg" style={{width: 48, minWidth: 40}}>
-                      {slot}
-                    </td>
-                    {DAYS.map(d => {
-                      const found = ROOMS.map(room => {
-                        const key = makeKey(d.id, slot, room);
-                        const item = items[key];
-                        if (item && item.teacher === filterTeacherLabel) {
-                          return { ...item, room };
-                        }
-                        return null;
-                      }).find(Boolean);
-                      if (!found) {
-                        return <td key={d.id} className="border border-neutral-200 p-1 bg-neutral-50 min-w-[40px]" />;
-                      }
-                      return (
-                          <td key={d.id} className="border border-neutral-200 p-1 min-w-[40px]">
-                            <div className={`rounded p-1 text-[11px] sm:text-xs ${getTeacherColor(found.teacher)}`} style={{ minHeight: 18, padding: '2px 3px' }}>
-                              <div className="font-semibold leading-tight text-[11px] sm:text-xs">{found.teacher}</div>
-                              <div className="text-[10px] sm:text-xs">Lớp {found.subject}</div>
-                              <div className="text-[10px] sm:text-xs italic">Phòng: {found.room.toUpperCase()}</div>
-                            </div>
-                          </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <table className="w-full border border-neutral-200 text-[12px] md:text-lg bg-white rounded-lg shadow-sm">
-              <thead className="bg-neutral-50 text-[11px] md:text-xl font-semibold">
-                <tr>
-                  <th
-                    className="border border-neutral-200 px-1 py-2 text-left sticky top-0 left-0 z-30 bg-neutral-50"
-                    style={{width: 60, minWidth: 50}}
-                  >
-                    Ngày
-                  </th>
-                  <th
-                    className="border border-neutral-200 px-2 py-2 text-left sticky top-0 left-[60px] z-20 bg-neutral-50"
-                    style={{width: 70, minWidth: 60}}
-                  >
-                    Giờ
-                  </th>
-                  {ROOMS.map((r, idx) => (
-                    <th
-                      key={r}
-                      className="border border-neutral-200 px-2 py-2 text-left sticky top-0 bg-neutral-50"
-                      style={{zIndex: 10}}
-                    >
-                      {r.toUpperCase()}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {DAYS.map((d, dayIdx) => (
-                  <React.Fragment key={d.id}>
-                    {SLOTS.map((slot, slotIdx) => (
-                      <tr key={`${d.id}-${slot}`} className="align-top md:h-16">
-                        {slotIdx === 0 && (
-                          <td
-                            className="border border-neutral-200 px-1 py-2 font-medium bg-white text-[12px] md:text-lg sticky left-0 z-30 bg-neutral-50"
-                            rowSpan={SLOTS.length}
-                            style={{width: 60, minWidth: 50}}
-                          >
-                            {d.label}
-                          </td>
-                        )}
-                        <td
-                          className="border border-neutral-200 px-2 py-2 bg-white/80 sticky left-[60px] z-20 bg-neutral-50 text-[12px] md:text-lg"
-                          style={{width: 70, minWidth: 60}}
-                        >
-                          <span className="text-xs md:text-lg text-neutral-700">{slot}</span>
-                        </td>
-                        {ROOMS.map(room => {
-                          const key = makeKey(d.id, slot, room)
-                          const item = items[key]
-                          if (teacherFilter !== "all" && teacherFilter && (!item || item.teacher !== teacherFilter)) {
-                            return <td key={key} className="border border-neutral-200 p-1 bg-neutral-50" />
-                          }
-                          return (
-                            <td key={key} className="border border-neutral-200 p-1">
-                              {!item ? (
-                                editMode && (
-                                  <Button size="sm" className="px-1 h-7 text-xs md:text-base" variant="ghost" onClick={() => openCreate(d.id, slot, room)}>
-                                    + Thêm lớp
-                                  </Button>
-                                )
-                              ) : (
-                                <div
-                                  className={`rounded-lg p-1 cursor-pointer text-[12px] md:text-lg ${getTeacherColor(item.teacher)} inline-flex items-center`}
-                                  style={{ minHeight: 22, padding: '4px 8px', width: 'fit-content', maxWidth: '100%' }}
-                                  onClick={() => editMode && openEdit(d.id, slot, room)}
-                                >
-                                  <div className="flex items-center gap-1">
-                                    {!!item.teacher && (
-                                      <span className="text-[11px] md:text-lg opacity-80 font-bold">{item.teacher}</span>
-                                    )}
-                                    <span className="font-semibold leading-tight text-[12px] md:text-lg">
-                                      <span className="hidden md:inline">- </span>
-                                      Lớp {item.subject}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
-                    <tr aria-hidden>
-                      <td colSpan={ROOMS.length + 2} className="h-2 bg-neutral-50" />
-                    </tr>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </main>
-
-      {/* Dialog thêm/sửa */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingKey ? "Sửa lớp học" : "Thêm lớp học"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="grid gap-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-neutral-500">Ngày</label>
-                <Select
-                  value={form.dayId}
-                  onValueChange={v => setForm(f => ({ ...f, dayId: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn ngày" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DAYS.map(d => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-xs text-neutral-500">Giờ</label>
-                <Select
-                  value={form.slot}
-                  onValueChange={v => setForm(f => ({ ...f, slot: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn giờ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SLOTS.map(s => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-neutral-500">Phòng</label>
-              <Select
-                value={form.room}
-                onValueChange={v => setForm(f => ({ ...f, room: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn phòng" />
-                </SelectTrigger>
+        <div className="grid gap-4">
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1">Ngày</Label>
+            <div className="col-span-3">
+              <Select value={day} onValueChange={setDay}>
+                <SelectTrigger><SelectValue placeholder="Chọn ngày" /></SelectTrigger>
                 <SelectContent>
-                  {ROOMS.map(r => (
-                    <SelectItem key={r} value={r}>
-                      {r.toUpperCase()}
-                    </SelectItem>
-                  ))}
+                  {DAYS.map(d => (<SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div>
-              <label className="text-xs text-neutral-500">Lớp học *</label>
-              <Input
-                value={form.subject}
-                onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                placeholder="VD: Toán 9"
-              />
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-neutral-500">Giáo viên</label>
-                <Select
-                  value={form.teacher}
-                  onValueChange={v => setForm(f => ({ ...f, teacher: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn giáo viên" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TEACHERS.map(t => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {/* Đã bỏ chọn màu thẻ, màu tự động theo giáo viên */}
-            </div>
-
-            <div>
-              {/* Ghi chú đã bị loại bỏ */}
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1">Môn</Label>
+            <div className="col-span-3">
+              <Select value={subject} onValueChange={setSubject}>
+                <SelectTrigger><SelectValue placeholder="Chọn môn" /></SelectTrigger>
+                <SelectContent>
+                  {subjectOptions.map(s => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <DialogFooter className="mt-2 flex flex-row gap-2 justify-end">
-            {editingKey && (
-              <Button variant="destructive" onClick={handleDelete}>
-                Xóa
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1">Loại</Label>
+            <div className="col-span-3">
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger><SelectValue placeholder="Chọn loại" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="chinhthuc">Chính thức</SelectItem>
+                  <SelectItem value="hocthem">Học thêm</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1">Bắt đầu</Label>
+            <Input className="col-span-3" type="time" value={start} onChange={e => setStart(e.target.value)} />
+          </div>
+
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1">Kết thúc</Label>
+            <Input className="col-span-3" type="time" value={end} onChange={e => setEnd(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-2">
+            <Label className="col-span-1">Ghi chú</Label>
+            <Input className="col-span-3" placeholder="Ghi chú..." value={note} onChange={e => setNote(e.target.value)} />
+          </div>
+        </div>
+
+        <DialogFooter className="mt-2">
+          <Button variant="secondary" onClick={() => onOpenChange(false)}>Hủy</Button>
+          <Button onClick={submit}>Thêm</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ---------- layout lịch ----------
+function WeekGrid({ events, onDelete, extraSubjects }) {
+  // gom sự kiện theo ngày
+  const byDay = useMemo(() => {
+  const map = Object.fromEntries(DAYS.map(d => [d.id, []]))
+  events.forEach(ev => { if (map[ev.day]) map[ev.day].push(ev) })
+    return map
+  }, [events])
+
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-[80px_repeat(7,1fr)]">
+        {/* cột giờ bên trái */}
+        <div />
+        {DAYS.map(d => (
+          <div key={`head-${d.id}`} className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b px-3 py-2 font-semibold">
+            {d.label}
+          </div>
+        ))}
+
+        {/* body: 15 hàng giờ */}
+        {/* cột giờ (gutter) */}
+        <div className="border-r">
+          {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
+            const hour = START_HOUR + i
+            // hàng giờ là ô cao 60px; đường kẻ mỗi giờ (trừ dòng đầu)
+            return (
+              <div key={hour} className="relative h-[60px]">
+                <div className="absolute -top-3 right-2 text-xs text-muted-foreground">{fmtHourLabel(hour)}</div>
+                {i !== 0 && <div className="absolute top-0 left-0 right-0 h-px bg-border" />}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 7 cột ngày */}
+        {DAYS.map(d => (
+          <DayColumn key={d.id} day={d.id} events={byDay[d.id]} onDelete={onDelete} label={d.label} extraSubjects={extraSubjects} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DayColumn({ day, events, onDelete, label, extraSubjects }) {
+  // cột là relative container, cao theo 15 giờ * 60px = 900px
+  // vạch kẻ mỗi giờ
+  return (
+    <div className="relative border-l" title={label}>
+      {/* nền lưới giờ */}
+      {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
+        <div key={i} className="h-[60px] border-t border-border/70" />
+      ))}
+      {/* render sự kiện (absolute) */}
+      <div className="absolute inset-0">
+        {events
+          .slice()
+          .sort((a, b) => minutesFrom0700(a.start) - minutesFrom0700(b.start))
+          .map((ev) => {
+            const sM = clampToRange(minutesFrom0700(ev.start))
+            const eM = clampToRange(minutesFrom0700(ev.end))
+            const top = toPct(sM)
+            const height = toPct(Math.max(15, eM - sM)) // tối thiểu 15' để dễ thấy
+            const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === ev.subject)
+            const color = subj?.color ?? "bg-gray-100 text-gray-700 border-gray-300"
+            return (
+              <div
+                key={ev.id}
+                className={`absolute left-1 right-1 rounded-lg border px-2 py-1 shadow-sm ${color}`}
+                style={{ top, height }}
+                title={`${ev.title} • ${ev.start}–${ev.end}`}
+              >
+                {/* Không hiển thị tiêu đề */}
+                <div className="mt-0.5 text-[10px] opacity-80">{ev.start} – {ev.end}</div>
+                {ev.note && <div className="mt-0.5 text-[10px] italic text-gray-500 line-clamp-2">{ev.note}</div>}
+                <div className="mt-1 flex gap-1 items-center">
+                  <Badge variant="outline" className="h-5 text-[10px]">{subj?.name || ev.subject}</Badge>
+                  <Badge variant={ev.type === "hocthem" ? "destructive" : "secondary"} className="h-5 text-[10px]">
+                    {ev.type === "hocthem" ? "Học thêm" : "Chính thức"}
+                  </Badge>
+                </div>
+                <button
+                  onClick={() => onDelete(ev.id)}
+                  className="absolute right-1.5 top-1 text-[10px] opacity-60 hover:opacity-100"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
+      </div>
+    </div>
+  )
+}
+
+// ---------- app ----------
+
+export default function App() {
+  const USER_ID = "demo-user"; // Có thể thay bằng id đăng nhập thực tế
+  const [events, setEvents] = useState([])
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [extraSubjects, setExtraSubjects] = useExtraSubjects();
+  const [showExtraManager, setShowExtraManager] = useState(false);
+
+  // Load dữ liệu từ Firebase khi mở app
+  useEffect(() => {
+    setLoading(true)
+    loadTimetable(USER_ID).then((data) => {
+      setEvents(Array.isArray(data) ? data : [])
+      setLoading(false)
+    })
+  }, [])
+
+  // Lưu dữ liệu lên Firebase mỗi khi events thay đổi (trừ lúc đang loading)
+  useEffect(() => {
+    if (!loading) {
+      saveTimetable(USER_ID, events)
+    }
+  }, [events, loading])
+
+  function addEvent(ev) {
+    setEvents(prev => [...prev, ev])
+  }
+
+  function deleteEvent(id) {
+    setEvents(prev => prev.filter(e => e.id !== id))
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Đang tải dữ liệu...</div>;
+  }
+  // Helper lấy thứ hiện tại (Mon-Sun) và giờ phút hiện tại GMT+7
+  function getNowInfo() {
+    const now = new Date();
+    // Lấy giờ GMT+7
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const tzDate = new Date(utc + 7 * 3600000);
+    // Đổi id: Chủ nhật là CN, các ngày khác giữ nguyên (0=CN, 1=Mon, ..., 6=Sat)
+    const weekdayMap = ["CN", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekday = weekdayMap[tzDate.getDay()];
+    const hour = tzDate.getHours();
+    const minute = tzDate.getMinutes();
+    const timeStr = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+    return { weekday, hour, minute, timeStr, tzDate };
+  }
+
+  // Tìm lịch đang diễn ra và sắp diễn ra
+  function getCurrentAndNextEvents() {
+    const { weekday, timeStr } = getNowInfo();
+    // Lấy tất cả sự kiện hôm nay, sắp xếp theo start
+    const todayEvents = events.filter(ev => ev.day === weekday)
+      .map(ev => ({ ...ev, s: minutesFrom0700(ev.start), e: minutesFrom0700(ev.end) }))
+      .sort((a, b) => a.s - b.s);
+    const nowMin = minutesFrom0700(timeStr);
+    let current = null, next = null;
+    for (let ev of todayEvents) {
+      if (ev.s <= nowMin && nowMin < ev.e) current = ev;
+      else if (ev.s > nowMin && !next) next = ev;
+    }
+    return { current, next };
+  }
+
+  const { current, next } = getCurrentAndNextEvents();
+
+  return (
+    <div className="max-w-[1400px] pl-2 pr-2 pt-4 pb-4 flex flex-row gap-4">
+      <div className="flex-1 min-w-0">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-2xl">Thời khoá biểu (7:00 → 22:00)</CardTitle>
+            <div className="flex gap-2">
+              <Button onClick={() => setOpen(true)}>+ Thêm lịch</Button>
+              <Button variant="destructive" onClick={() => {
+                if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch không?')) setEvents([]);
+              }}>
+                Xóa toàn bộ lịch
               </Button>
-            )}
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Hủy
-            </Button>
-            <Button onClick={handleSave}>{editingKey ? "Lưu" : "Thêm"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">Màu theo môn học:</span>
+              <span className="font-semibold text-sm">Môn chính thức:</span>
+              {OFFICIAL_SUBJECTS.map(s => (
+                <span key={s.id} className={`px-2 py-1 rounded border text-xs ${s.color}`}>{s.name}</span>
+              ))}
+              <span className="font-semibold text-sm ml-4">Môn học thêm:</span>
+              {extraSubjects.map(s => (
+                <span key={s.id} className={`px-2 py-1 rounded border text-xs ${s.color}`}>{s.name}</span>
+              ))}
+              <button className="ml-4 px-2 py-1 rounded bg-slate-200 text-xs border hover:bg-slate-300" onClick={() => setShowExtraManager(true)}>
+                Tuỳ chỉnh môn học thêm
+              </button>
+            </div>
+            <ExtraSubjectsManager open={showExtraManager} onOpenChange={setShowExtraManager} extraSubjects={extraSubjects} setExtraSubjects={setExtraSubjects} />
+            <WeekGrid events={events} onDelete={deleteEvent} extraSubjects={extraSubjects} />
+          </CardContent>
+        </Card>
+  <AddEventDialog open={open} onOpenChange={setOpen} onAdd={addEvent} extraSubjects={extraSubjects} events={events} />
+      </div>
+      {/* Sidebar phải */}
+      <div className="w-[320px] flex-shrink-0">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Lịch hôm nay</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-2">
+              <span className="font-semibold">Bây giờ: </span>
+              {(() => {
+                const { tzDate } = getNowInfo();
+                return tzDate.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZone: "Asia/Bangkok" });
+              })()}
+            </div>
+            <div className="mb-3">
+              <div className="font-semibold text-green-700">Đang diễn ra:</div>
+              {current ? (
+                <div className="mt-1 p-2 rounded border bg-green-50">
+                  <div><b>{(() => {
+                    const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === current.subject);
+                    return subj?.name || current.subject;
+                  })()}</b></div>
+                  <div>{current.start} – {current.end}</div>
+                  <div className="text-xs text-gray-500">{current.note}</div>
+                </div>
+              ) : <div className="text-xs text-gray-500">Không có tiết nào đang diễn ra</div>}
+            </div>
+            <div>
+              <div className="font-semibold text-blue-700">Sắp diễn ra:</div>
+              {next ? (
+                <div className="mt-1 p-2 rounded border bg-blue-50">
+                  <div><b>{(() => {
+                    const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === next.subject);
+                    return subj?.name || next.subject;
+                  })()}</b></div>
+                  <div>{next.start} – {next.end}</div>
+                  <div className="text-xs text-gray-500">{next.note}</div>
+                </div>
+              ) : <div className="text-xs text-gray-500">Không có tiết nào sắp diễn ra</div>}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
