@@ -457,17 +457,23 @@ export default function App() {
   useEffect(() => {
     setLoading(true)
     loadTimetable(USER_ID).then((data) => {
-      setEvents(Array.isArray(data) ? data : [])
+      // data có thể là { events, extraSubjects } hoặc mảng cũ
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        setEvents(Array.isArray(data.events) ? data.events : [])
+        if (Array.isArray(data.extraSubjects)) setExtraSubjects(data.extraSubjects)
+      } else {
+        setEvents(Array.isArray(data) ? data : [])
+      }
       setLoading(false)
     })
   }, [])
 
-  // Lưu dữ liệu lên Firebase mỗi khi events thay đổi (trừ lúc đang loading)
+  // Lưu dữ liệu lên Firebase mỗi khi events hoặc extraSubjects thay đổi (trừ lúc đang loading)
   useEffect(() => {
     if (!loading) {
-      saveTimetable(USER_ID, events)
+      saveTimetable(USER_ID, { events, extraSubjects })
     }
-  }, [events, loading])
+  }, [events, extraSubjects, loading])
 
   function addEvent(ev) {
     setEvents(prev => [...prev, ev])
@@ -513,7 +519,9 @@ export default function App() {
   const { current, next } = getCurrentAndNextEvents();
 
   return (
-    <div className="max-w-[1500px] pl-2 pr-2 pt-4 pb-4 flex flex-row gap-4">
+    <div className="w-full flex flex-col items-center">
+      <h1 className="text-3xl font-bold text-blue-800 mb-2 mt-4">Thời khoá biểu của Lê Ngọc Như Quỳnh</h1>
+      <div className="max-w-[1500px] pl-2 pr-2 pt-4 pb-4 flex flex-row gap-4 w-full">
       <div className="flex-1 min-w-0">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -547,9 +555,9 @@ export default function App() {
           </CardContent>
         </Card>
   <AddEventDialog open={open} onOpenChange={setOpen} onAdd={addEvent} extraSubjects={extraSubjects} events={events} />
-      </div>
-      {/* Sidebar phải */}
-      <div className="w-[320px] flex-shrink-0">
+  </div>
+  {/* Sidebar phải */}
+  <div className="w-[320px] flex-shrink-0">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Lịch hôm nay</CardTitle>
@@ -590,6 +598,7 @@ export default function App() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   )
