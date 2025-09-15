@@ -1,3 +1,4 @@
+import MobileTodaySchedule from "./components/MobileTodaySchedule";
 import React, { useMemo, useState, useEffect } from "react"
 import { saveTimetable, loadTimetable } from "./lib/firebase"
 
@@ -441,6 +442,8 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
 // ---------- app ----------
 
 export default function App() {
+  // Phát hiện thiết bị di động đơn giản
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
   // State để cập nhật thời gian thực
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -487,6 +490,15 @@ export default function App() {
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Đang tải dữ liệu...</div>;
   }
+  if (isMobile) {
+    return (
+      <MobileTodaySchedule
+        events={events}
+        extraSubjects={extraSubjects}
+        officialSubjects={OFFICIAL_SUBJECTS}
+      />
+    );
+  }
   // Helper lấy thứ hiện tại (Mon-Sun) và giờ phút hiện tại GMT+7
   function getNowInfo() {
     // Lấy giờ GMT+7
@@ -501,23 +513,24 @@ export default function App() {
     return { weekday, hour, minute, timeStr, tzDate };
   }
 
-  // Tìm lịch đang diễn ra và sắp diễn ra
-  function getCurrentAndNextEvents() {
+  // Tìm lịch đang diễn ra và tất cả sự kiện sắp diễn ra trong ngày
+  function getCurrentAndUpcomingEvents() {
     const { weekday, timeStr } = getNowInfo();
     // Lấy tất cả sự kiện hôm nay, sắp xếp theo start
     const todayEvents = events.filter(ev => ev.day === weekday)
       .map(ev => ({ ...ev, s: minutesFrom0700(ev.start), e: minutesFrom0700(ev.end) }))
       .sort((a, b) => a.s - b.s);
     const nowMin = minutesFrom0700(timeStr);
-    let current = null, next = null;
+    let current = null;
+    const upcoming = [];
     for (let ev of todayEvents) {
       if (ev.s <= nowMin && nowMin < ev.e) current = ev;
-      else if (ev.s > nowMin && !next) next = ev;
+      else if (ev.s > nowMin) upcoming.push(ev);
     }
-    return { current, next };
+    return { current, upcoming };
   }
 
-  const { current, next } = getCurrentAndNextEvents();
+  const { current, upcoming } = getCurrentAndUpcomingEvents();
 
   return (
     <div className="w-full flex flex-col items-center">
@@ -586,14 +599,22 @@ export default function App() {
             </div>
             <div>
               <div className="font-semibold text-blue-700">Sắp diễn ra:</div>
-              {next ? (
-                <div className="mt-1 p-2 rounded border bg-blue-50">
-                  <div><b>{(() => {
-                    const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === next.subject);
-                    return subj?.name || next.subject;
-                  })()}</b></div>
-                  <div>{next.start} – {next.end}</div>
-                  <div className="text-xs text-gray-500">{next.note}</div>
+              {upcoming.length > 0 ? (
+                <div className="flex flex-col gap-2 mt-1">
+                  {upcoming.map(ev => {
+                    const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === ev.subject);
+                    const typeLabel = ev.type === "chinhthuc" ? "Trường" : (ev.type === "hocthem" ? "Học thêm" : "Khác");
+                    return (
+                      <div key={ev.id} className="p-2 rounded border bg-blue-50">
+                        <div className="flex items-center gap-2">
+                          <b>{subj?.name || ev.subject}</b>
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ev.type === "chinhthuc" ? "bg-blue-200 text-blue-800" : ev.type === "hocthem" ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-700"}`}>{typeLabel}</span>
+                        </div>
+                        <div>{ev.start} – {ev.end}</div>
+                        <div className="text-xs text-gray-500">{ev.note}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : <div className="text-xs text-gray-500">Không có tiết nào sắp diễn ra</div>}
             </div>
