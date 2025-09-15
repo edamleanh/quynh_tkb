@@ -387,7 +387,7 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
     if (!time) return "";
     const [h, m] = time.split(":").map(Number);
     if (isNaN(h) || isNaN(m)) return time;
-    const suffix = h < 12 ? "SA" : "CH";
+    const suffix = h < 12 ? "" : "";
     const base = ((h + 11) % 12) + 1;
     return `${base}:${m.toString().padStart(2, "0")} ${suffix}`;
   }
