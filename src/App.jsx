@@ -347,24 +347,33 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-[80px_repeat(7,1fr)]">
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns:
+            '40px repeat(7, minmax(0, 1fr))',
+          // 40px cho cột giờ, 7 cột ngày chia đều
+        }}
+      >
         {/* cột giờ bên trái */}
-        <div />
+        <div className="hidden sm:block" />
         {DAYS.map(d => (
-          <div key={`head-${d.id}`} className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b px-3 py-2 font-semibold">
+          <div
+            key={`head-${d.id}`}
+            className="sticky top-0 z-10 bg-background/80 backdrop-blur border-b px-1 py-1 font-semibold text-[11px] sm:px-3 sm:py-2 sm:text-base text-center"
+          >
             {d.label}
           </div>
         ))}
 
         {/* body: 15 hàng giờ */}
         {/* cột giờ (gutter) */}
-        <div className="border-r">
+        <div className="border-r hidden sm:block">
           {Array.from({ length: END_HOUR - START_HOUR + 1 }).map((_, i) => {
             const hour = START_HOUR + i
-            // Không còn đường kẻ ngang giữa các giờ
             return (
-              <div key={hour} className="relative h-[65px]">
-                <div className="absolute -top-3 right-2 text-xs text-muted-foreground">{fmtHourLabel(hour)}</div>
+              <div key={hour} className="relative h-[36px] sm:h-[65px]">
+                <div className="absolute -top-2 right-1 text-[10px] text-muted-foreground sm:text-xs sm:right-2 sm:-top-3">{fmtHourLabel(hour)}</div>
               </div>
             )
           })}
@@ -372,7 +381,7 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
 
         {/* 7 cột ngày */}
         {DAYS.map(d => (
-          <DayColumn key={d.id} day={d.id} events={byDay[d.id]} onDelete={onDelete} label={d.label} extraSubjects={extraSubjects} />
+          <DayColumn key={d.id} day={d.id} events={byDay[d.id]} onDelete={onDelete} label={d.label} extraSubjects={extraSubjects} isMobile={true} />
         ))}
       </div>
     </div>
@@ -384,13 +393,14 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
   // vạch kẻ mỗi giờ
   // Số phút trong 1 giờ (dùng để tính pixel)
   const MINUTES_PER_HOUR = 60;
-  const HOUR_HEIGHT = 65; // px, phải khớp với .h-[60px] ở trên
-  const MIN_HEIGHT = 1; // px, tối thiểu để không bị ẩn
+  // Responsive: chiều cao mỗi giờ nhỏ hơn trên mobile
+  const HOUR_HEIGHT = typeof window !== 'undefined' && window.innerWidth < 640 ? 36 : 65;
+  const MIN_HEIGHT = 1;
   return (
     <div className="relative border-l" title={label}>
       {/* nền lưới giờ */}
       {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
-        <div key={i} className="h-[60px]" />
+        <div key={i} className="h-[36px] sm:h-[60px]" />
       ))}
       {/* render sự kiện (absolute) */}
       <div className="absolute inset-0">
@@ -407,25 +417,24 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
             return (
               <div
                 key={ev.id}
-                className={`absolute left-1 right-1 rounded-lg border px-2 py-1 shadow-sm ${color}`}
+                className={`absolute left-0.5 right-0.5 rounded border px-1.5 py-0.5 shadow-sm text-[10px] sm:left-1 sm:right-1 sm:px-2 sm:py-1 sm:text-[11px] ${color}`}
                 style={{ top: `${topPx}px`, height: `${heightPx}px` }}
                 title={`${ev.title} • ${ev.start}–${ev.end}`}
               >
-                {/* Không hiển thị tiêu đề */}
-                <div className="mt-0.5 text-[10px] opacity-80">{ev.start} – {ev.end}</div>
-                {ev.note && <div className="mt-0.5 text-[10px] italic text-gray-500 line-clamp-2">{ev.note}</div>}
+                <div className="mt-0.5">{ev.start} – {ev.end}</div>
+                {ev.note && <div className="mt-0.5 italic text-gray-500 line-clamp-2">{ev.note}</div>}
                 <div className={`mt-1 flex ${ev.type === "hocthem" ? "flex-col items-start gap-0.5" : "flex-row items-center gap-1"}`}>
-                  <Badge variant="outline" className="h-5 text-[11px] whitespace-nowrap">{subj?.name || ev.subject}</Badge>
+                  <Badge variant="outline" className="h-5 whitespace-nowrap">{subj?.name || ev.subject}</Badge>
                   {ev.type === "hocthem" && (
-                    <Badge variant="destructive" className="h-5 text-[11px] whitespace-nowrap mt-0.5">Học thêm</Badge>
+                    <Badge variant="destructive" className="h-5 whitespace-nowrap mt-0.5">Học thêm</Badge>
                   )}
                   {ev.type === "chinhthuc" && (
-                    <Badge variant="success" className="h-5 text-[11px] whitespace-nowrap mt-0.5">Trường</Badge>
+                    <Badge variant="success" className="h-5 whitespace-nowrap mt-0.5">Trường</Badge>
                   )}
                 </div>
                 <button
                   onClick={() => onDelete(ev.id)}
-                  className="absolute right-1.5 top-1 text-[10px] opacity-60 hover:opacity-100"
+                  className="absolute right-1 top-1 text-[10px] opacity-60 hover:opacity-100 sm:right-1.5"
                 >
                   ✕
                 </button>
