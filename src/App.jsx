@@ -382,6 +382,15 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
 }
 
 function DayColumn({ day, events, onDelete, label, extraSubjects }) {
+  // Định dạng giờ SA/CH
+  function fmtTimeSA(time) {
+    if (!time) return "";
+    const [h, m] = time.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return time;
+    const suffix = h < 12 ? "SA" : "CH";
+    const base = ((h + 11) % 12) + 1;
+    return `${base}:${m.toString().padStart(2, "0")} ${suffix}`;
+  }
   // cột là relative container, cao theo 15 giờ * 60px = 900px
   // vạch kẻ mỗi giờ
   // Số phút trong 1 giờ (dùng để tính pixel)
@@ -414,7 +423,7 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
                 title={`${ev.title} • ${ev.start}–${ev.end}`}
               >
                 {/* Không hiển thị tiêu đề */}
-                <div className="mt-0.5 text-[10px] opacity-80">{ev.start} – {ev.end}</div>
+                <div className="mt-0.5 text-[10px] opacity-80">{fmtTimeSA(ev.start)} – {fmtTimeSA(ev.end)}</div>
                 {ev.note && <div className="mt-0.5 text-[10px] italic text-gray-500 line-clamp-2">{ev.note}</div>}
                 <div className={`mt-1 flex ${ev.type === "hocthem" ? "flex-col items-start gap-0.5" : "flex-row items-center gap-1"}`}>
                   <Badge variant="outline" className="h-5 text-[11px] whitespace-nowrap">{subj?.name || ev.subject}</Badge>
@@ -442,6 +451,15 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
 // ---------- app ----------
 
 export default function App() {
+  // Định dạng giờ AM/PM
+  function fmtTimeAMPM(time) {
+    if (!time) return "";
+    const [h, m] = time.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return time;
+    const suffix = h < 12 ? "AM" : "PM";
+    const base = ((h + 11) % 12) + 1;
+    return `${base}:${m.toString().padStart(2, "0")} ${suffix}`;
+  }
   // Phát hiện thiết bị di động đơn giản
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
   // State để cập nhật thời gian thực
@@ -592,7 +610,7 @@ export default function App() {
                     const subj = (OFFICIAL_SUBJECTS.concat(extraSubjects)).find(x => x.id === current.subject);
                     return subj?.name || current.subject;
                   })()}</b></div>
-                  <div>{current.start} – {current.end}</div>
+                  <div>{fmtTimeAMPM(current.start)} – {fmtTimeAMPM(current.end)}</div>
                   <div className="text-xs text-gray-500">{current.note}</div>
                 </div>
               ) : <div className="text-xs text-gray-500">Không có tiết nào đang diễn ra</div>}
@@ -610,7 +628,7 @@ export default function App() {
                           <b>{subj?.name || ev.subject}</b>
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${ev.type === "chinhthuc" ? "bg-blue-200 text-blue-800" : ev.type === "hocthem" ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-700"}`}>{typeLabel}</span>
                         </div>
-                        <div>{ev.start} – {ev.end}</div>
+                        <div>{fmtTimeAMPM(ev.start)} – {fmtTimeAMPM(ev.end)}</div>
                         <div className="text-xs text-gray-500">{ev.note}</div>
                       </div>
                     );
