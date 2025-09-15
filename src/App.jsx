@@ -42,6 +42,8 @@ const OFFICIAL_SUBJECTS = [
   { id: "pe",       name: "Thể Dục",       color: "bg-lime-100 text-lime-700 border-lime-300" },
   { id: "phys",     name: "Vật lí",        color: "bg-emerald-100 text-emerald-700 border-emerald-300" },
   { id: "tech",     name: "Công nghệ",     color: "bg-orange-100 text-orange-700 border-orange-300" },
+    { id: "flag",     name: "Chào cờ",       color: "bg-red-100 text-red-700 border-red-300" },
+  { id: "shcn",     name: "SHCN",          color: "bg-teal-100 text-teal-700 border-teal-300" },
 ]
 
 // Thay EXTRA_SUBJECTS bằng hook động
@@ -176,9 +178,24 @@ function AddEventDialog({ open, onOpenChange, onAdd, extraSubjects, events }) {
   const [day, setDay] = useState("Mon")
   const [type, setType] = useState("chinhthuc")
   const [subject, setSubject] = useState("")
-  const [start, setStart] = useState("07:30")
+  const [start, setStart] = useState("07:00")
   const [end, setEnd] = useState("09:00")
   const [note, setNote] = useState("")
+
+  // Khi chọn ngày, tự động set giờ bắt đầu phù hợp
+  React.useEffect(() => {
+    if (!day) return;
+    // Lấy tất cả sự kiện của ngày này, sắp xếp theo giờ kết thúc
+    const dayEvents = (events || []).filter(ev => ev.day === day)
+      .sort((a, b) => minutesFrom0700(a.end) - minutesFrom0700(b.end));
+    if (dayEvents.length === 0) {
+      setStart("07:00");
+    } else {
+      // Lấy giờ kết thúc của sự kiện cuối cùng
+      const lastEnd = dayEvents[dayEvents.length - 1].end;
+      setStart(lastEnd);
+    }
+  }, [day, events, open]);
 
   // Chọn danh sách môn học theo loại
   const subjectOptions = type === "chinhthuc" ? OFFICIAL_SUBJECTS : extraSubjects
@@ -194,12 +211,13 @@ function AddEventDialog({ open, onOpenChange, onAdd, extraSubjects, events }) {
   }, [type, extraSubjects])
 
   // Nếu là chính thức, khi đổi giờ bắt đầu thì tự set giờ kết thúc = giờ bắt đầu + 45 phút
+  // Nếu là học thêm thì + 90 phút
   React.useEffect(() => {
-    if (type === "chinhthuc" && start) {
-      // Tính giờ kết thúc mới
+    if (start) {
       const [h, m] = start.split(":").map(Number);
       if (!isNaN(h) && !isNaN(m)) {
-        let total = h * 60 + m + 45;
+        let addMin = type === "chinhthuc" ? 45 : (type === "hocthem" ? 90 : 0);
+        let total = h * 60 + m + addMin;
         let newH = Math.floor(total / 60);
         let newM = total % 60;
         // Nếu vượt quá END_HOUR thì giới hạn
@@ -350,7 +368,7 @@ function WeekGrid({ events, onDelete, extraSubjects }) {
             const hour = START_HOUR + i
             // hàng giờ là ô cao 60px; đường kẻ mỗi giờ (trừ dòng đầu)
             return (
-              <div key={hour} className="relative h-[60px]">
+              <div key={hour} className="relative h-[65px]">
                 <div className="absolute -top-3 right-2 text-xs text-muted-foreground">{fmtHourLabel(hour)}</div>
                 {i !== 0 && <div className="absolute top-0 left-0 right-0 h-px bg-border" />}
               </div>
@@ -372,7 +390,7 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
   // vạch kẻ mỗi giờ
   // Số phút trong 1 giờ (dùng để tính pixel)
   const MINUTES_PER_HOUR = 60;
-  const HOUR_HEIGHT = 60; // px, phải khớp với .h-[60px] ở trên
+  const HOUR_HEIGHT = 65; // px, phải khớp với .h-[60px] ở trên
   const MIN_HEIGHT = 1; // px, tối thiểu để không bị ẩn
   return (
     <div className="relative border-l" title={label}>
@@ -402,11 +420,11 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
                 {/* Không hiển thị tiêu đề */}
                 <div className="mt-0.5 text-[10px] opacity-80">{ev.start} – {ev.end}</div>
                 {ev.note && <div className="mt-0.5 text-[10px] italic text-gray-500 line-clamp-2">{ev.note}</div>}
-                <div className="mt-1 flex gap-1 items-center">
-                  <Badge variant="outline" className="h-5 text-[10px]">{subj?.name || ev.subject}</Badge>
-                  <Badge variant={ev.type === "hocthem" ? "destructive" : "secondary"} className="h-5 text-[10px]">
-                    {ev.type === "hocthem" ? "Học thêm" : "Chính thức"}
-                  </Badge>
+                <div className="mt-1 flex gap-1 items-center flex-nowrap">
+                  <Badge variant="outline" className="h-5 text-[10px] whitespace-nowrap">{subj?.name || ev.subject}</Badge>
+                  {ev.type === "hocthem" && (
+                    <Badge variant="destructive" className="h-5 text-[10px] whitespace-nowrap">Học thêm</Badge>
+                  )}
                 </div>
                 <button
                   onClick={() => onDelete(ev.id)}
@@ -425,6 +443,12 @@ function DayColumn({ day, events, onDelete, label, extraSubjects }) {
 // ---------- app ----------
 
 export default function App() {
+  // State để cập nhật thời gian thực
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const USER_ID = "demo-user"; // Có thể thay bằng id đăng nhập thực tế
   const [events, setEvents] = useState([])
   const [open, setOpen] = useState(false)
@@ -461,7 +485,6 @@ export default function App() {
   }
   // Helper lấy thứ hiện tại (Mon-Sun) và giờ phút hiện tại GMT+7
   function getNowInfo() {
-    const now = new Date();
     // Lấy giờ GMT+7
     const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
     const tzDate = new Date(utc + 7 * 3600000);
